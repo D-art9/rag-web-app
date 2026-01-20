@@ -1,28 +1,43 @@
 const fs = require('fs');
 const path = require('path');
-const YtDlpWrap = require('yt-dlp-wrap').default;
+const axios = require('axios');
 
 const isWindows = process.platform === 'win32';
 const binaryName = isWindows ? 'yt-dlp.exe' : 'yt-dlp';
 // Resolve to the root backend folder
 const binaryPath = path.resolve(__dirname, '../../', binaryName);
 
-(async () => {
-    console.log('--- YT-DLP DOWNLOAD SCRIPT DEBUG ---');
-    console.log('Platform:', process.platform);
-    console.log('Script Directory:', __dirname);
-    console.log('Target Binary Path:', binaryPath);
+// Use a fixed version to avoid API rate limits and ensure stability
+// See: https://github.com/yt-dlp/yt-dlp/releases
+const VERSION = '2024.08.06';
+const DOWNLOAD_URL = `https://github.com/yt-dlp/yt-dlp/releases/download/${VERSION}/${binaryName}`;
 
-    // Ensure directory exists
-    const dir = path.dirname(binaryPath);
-    if (!fs.existsSync(dir)) {
-        console.log('Directory does not exist, creating:', dir);
-        fs.mkdirSync(dir, { recursive: true });
-    }
+(async () => {
+    console.log('--- YT-DLP DIRECT DOWNLOAD SCRIPT ---');
+    console.log('Target Path:', binaryPath);
+    console.log('Download URL:', DOWNLOAD_URL);
 
     try {
-        console.log('Starting download from GitHub...');
-        await YtDlpWrap.downloadFromGithub(binaryPath);
+        // Ensure directory exists
+        const dir = path.dirname(binaryPath);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+        // Download directly using axios stream
+        console.log('Starting direct download...');
+        const response = await axios({
+            method: 'get',
+            url: DOWNLOAD_URL,
+            responseType: 'stream'
+        });
+
+        const writer = fs.createWriteStream(binaryPath);
+        response.data.pipe(writer);
+
+        await new Promise((resolve, reject) => {
+            writer.on('finish', resolve);
+            writer.on('error', reject);
+        });
+
         console.log('Download successful.');
 
         if (!isWindows) {
@@ -33,11 +48,9 @@ const binaryPath = path.resolve(__dirname, '../../', binaryName);
         console.log('Success! Binary is ready.');
     } catch (error) {
         console.error('CRITICAL ERROR during yt-dlp download:');
-        console.error(error);
-        if (error.code) console.error('Error Code:', error.code);
+        console.error(error.message);
         if (error.response) {
-            console.error('Response Status:', error.response.status);
-            console.error('Response Body:', error.response.data);
+            console.error('Status:', error.response.status);
         }
         process.exit(1);
     }
