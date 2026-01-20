@@ -19,32 +19,36 @@ const ensureBinary = async () => {
 };
 
 /**
- * Helper to find the cookies file path
+ * Helper to get a WRITABLE path for cookies.
+ * yt-dlp tries to update the cookies file, so we cannot use the read-only /etc/secrets directly.
  */
-const getCookiesPath = (): string | null => {
-    // 1. Check for temp cookies file from Env Var (Environment Variable fallback)
-    const tempCookiesPath = path.resolve(__dirname, '../../cookies.txt');
-    if (process.env.YOUTUBE_COOKIES_CONTENT) {
-        // If the env var exists, write it to a temp file if it doesn't exist yet
-        if (!fs.existsSync(tempCookiesPath)) {
-            console.log('[INGEST] Writing cookies from Env Var to file...');
-            fs.writeFileSync(tempCookiesPath, process.env.YOUTUBE_COOKIES_CONTENT);
-        }
-        return tempCookiesPath;
-    }
-
-    // 2. Check for uploaded secret file (Render default mount: /etc/secrets/cookies.txt)
-    // This is the preferred method for large secrets on Render
+const getWritableCookiesPath = (): string | null => {
+    // 1. Check for secret file (Render)
     const secretPath = '/etc/secrets/cookies.txt';
     if (fs.existsSync(secretPath)) {
-        console.log('[INGEST] Found secret cookies file at /etc/secrets/cookies.txt');
-        return secretPath;
+        // Copy to a writable temp location in the app directory
+        const tempPath = path.resolve(__dirname, `cookies_${Date.now()}.txt`);
+        try {
+            console.log(`[INGEST] Copying read-only cookies from ${secretPath} to ${tempPath}`);
+            fs.copyFileSync(secretPath, tempPath);
+            return tempPath;
+        } catch (e) {
+            console.error('[INGEST] Failed to copy secret cookies to temp:', e);
+        }
     }
 
-    // 3. Check for local dev file (ProjectRoot/backend/cookies.txt)
-    if (fs.existsSync(tempCookiesPath)) {
-        return tempCookiesPath;
+    // 2. Check for temp cookies file from Env Var (Fallback)
+    const envPath = path.resolve(__dirname, '../../cookies.txt');
+    if (process.env.YOUTUBE_COOKIES_CONTENT) {
+        if (!fs.existsSync(envPath)) {
+            console.log('[INGEST] Writing cookies from Env Var to file...');
+            fs.writeFileSync(envPath, process.env.YOUTUBE_COOKIES_CONTENT);
+        }
+        return envPath;
     }
+
+    // 3. Local dev fallback
+    if (fs.existsSync(envPath)) return envPath;
 
     return null;
 };
@@ -55,7 +59,7 @@ const getCookiesPath = (): string | null => {
 export const transcriptService = {
     extractTranscript: async (videoUrl: string): Promise<string> => {
         const vttPath = path.resolve(__dirname, `temp_${Date.now()}.vtt`);
-        const cookiesPath = getCookiesPath();
+        const cookiesPath = getWritableCookiesPath();
 
         try {
             console.log(`[INGEST] Starting transcript extraction for: ${videoUrl}`);
@@ -69,20 +73,23 @@ export const transcriptService = {
                 '--write-sub',
                 '--sub-lang', 'en',
                 '--skip-download',
-                // spoof user agent
+                // Standard browser UA is safer with cookies
                 '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                // mimic android client
-                '--extractor-args', 'youtube:player_client=android',
                 '--output', vttPath
             ];
 
             // Append cookies if found
             if (cookiesPath) {
-                console.log(`[INGEST] Using cookies from: ${cookiesPath}`);
+                console.log(`[INGEST] Using cookies from writable path: ${cookiesPath}`);
                 args.push('--cookies', cookiesPath);
             }
 
             await ytDlpWrap.execPromise(args);
+
+            // Clean up writable cookies if they were created in temp dir (filename contains timestamp)
+            if (cookiesPath && cookiesPath.includes('cookies_')) {
+                try { fs.unlinkSync(cookiesPath); } catch (e) { }
+            }
 
             console.log(`[INGEST] yt-dlp command completed, searching for VTT file...`);
 
@@ -116,7 +123,12 @@ export const transcriptService = {
             return cleanText;
 
         } catch (error: any) {
-            // Cleanup on error if file exists
+            // Cleanup cookies
+            try {
+                if (cookiesPath && cookiesPath.includes('cookies_')) fs.unlinkSync(cookiesPath);
+            } catch (e) { }
+
+            // Cleanup vtt
             try {
                 const dir = path.dirname(vttPath);
                 const files = fs.readdirSync(dir);
@@ -140,18 +152,16 @@ export const transcriptService = {
      * Extracts video metadata (title, thumbnail) using yt-dlp
      */
     getVideoMetadata: async (videoUrl: string): Promise<{ title: string; thumbnail: string }> => {
+        const cookiesPath = getWritableCookiesPath();
         try {
             console.log(`[METADATA] Starting metadata fetch for: ${videoUrl}`);
             await ensureBinary();
             console.log(`[METADATA] Binary verified, calling yt-dlp.getVideoInfo()...`);
 
-            const cookiesPath = getCookiesPath();
-
             const args = [
                 videoUrl,
                 '--dump-json',
                 '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                '--extractor-args', 'youtube:player_client=android',
                 '--no-playlist'
             ];
 
@@ -161,6 +171,12 @@ export const transcriptService = {
             }
 
             const output = await ytDlpWrap.execPromise(args);
+
+            // Clean up
+            if (cookiesPath && cookiesPath.includes('cookies_')) {
+                try { fs.unlinkSync(cookiesPath); } catch (e) { }
+            }
+
             const metadata = JSON.parse(output);
 
             console.log(`[METADATA] ✓ Metadata received. Title: "${metadata.title}"`);
@@ -171,6 +187,10 @@ export const transcriptService = {
                 thumbnail: metadata.thumbnail || ''
             };
         } catch (error: any) {
+            // Clean up
+            if (cookiesPath && cookiesPath.includes('cookies_')) {
+                try { fs.unlinkSync(cookiesPath); } catch (e) { }
+            }
             console.error('[METADATA] ✗ Failed to fetch metadata:', error.message);
             console.error('[METADATA] ✗ Full error:', error);
             // Fallback to URL if metadata extraction fails
