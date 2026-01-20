@@ -19,33 +19,70 @@ const ensureBinary = async () => {
 };
 
 /**
+ * Helper to find the cookies file path
+ */
+const getCookiesPath = (): string | null => {
+    // 1. Check for temp cookies file from Env Var (Environment Variable fallback)
+    const tempCookiesPath = path.resolve(__dirname, '../../cookies.txt');
+    if (process.env.YOUTUBE_COOKIES_CONTENT) {
+        // If the env var exists, write it to a temp file if it doesn't exist yet
+        if (!fs.existsSync(tempCookiesPath)) {
+            console.log('[INGEST] Writing cookies from Env Var to file...');
+            fs.writeFileSync(tempCookiesPath, process.env.YOUTUBE_COOKIES_CONTENT);
+        }
+        return tempCookiesPath;
+    }
+
+    // 2. Check for uploaded secret file (Render default mount: /etc/secrets/cookies.txt)
+    // This is the preferred method for large secrets on Render
+    const secretPath = '/etc/secrets/cookies.txt';
+    if (fs.existsSync(secretPath)) {
+        console.log('[INGEST] Found secret cookies file at /etc/secrets/cookies.txt');
+        return secretPath;
+    }
+
+    // 3. Check for local dev file (ProjectRoot/backend/cookies.txt)
+    if (fs.existsSync(tempCookiesPath)) {
+        return tempCookiesPath;
+    }
+
+    return null;
+};
+
+/**
  * Handles external data extraction using yt-dlp.
  */
 export const transcriptService = {
     extractTranscript: async (videoUrl: string): Promise<string> => {
         const vttPath = path.resolve(__dirname, `temp_${Date.now()}.vtt`);
+        const cookiesPath = getCookiesPath();
 
         try {
             console.log(`[INGEST] Starting transcript extraction for: ${videoUrl}`);
             await ensureBinary();
             console.log(`[INGEST] Binary verified, executing yt-dlp command...`);
 
-            // Download instructions:
-            // --write-auto-sub: Get auto-generated captions
-            // --write-sub: Get manual captions
-            // --skip-download: Don't download video
-            // --sub-lang en: Prefer English
-            // --output: Save to specific path
-            await ytDlpWrap.execPromise([
+            // Build arguments
+            const args = [
                 videoUrl,
                 '--write-auto-sub',
                 '--write-sub',
                 '--sub-lang', 'en',
                 '--skip-download',
+                // spoof user agent
                 '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                // mimic android client
                 '--extractor-args', 'youtube:player_client=android',
                 '--output', vttPath
-            ]);
+            ];
+
+            // Append cookies if found
+            if (cookiesPath) {
+                console.log(`[INGEST] Using cookies from: ${cookiesPath}`);
+                args.push('--cookies', cookiesPath);
+            }
+
+            await ytDlpWrap.execPromise(args);
 
             console.log(`[INGEST] yt-dlp command completed, searching for VTT file...`);
 
@@ -94,7 +131,6 @@ export const transcriptService = {
                 throw error;
             }
 
-
             // Handle yt-dlp specific errors
             throw new Error('Could not retrieve transcript. ' + (error.message || 'Unknown error'));
         }
@@ -109,17 +145,22 @@ export const transcriptService = {
             await ensureBinary();
             console.log(`[METADATA] Binary verified, calling yt-dlp.getVideoInfo()...`);
 
-            // Use custom execution to pass anti-bot headers
-            // We use --dump-json to get the metadata
-            const output = await ytDlpWrap.execPromise([
+            const cookiesPath = getCookiesPath();
+
+            const args = [
                 videoUrl,
                 '--dump-json',
                 '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                // Use Android client to bypass some bot checks
                 '--extractor-args', 'youtube:player_client=android',
                 '--no-playlist'
-            ]);
+            ];
 
+            if (cookiesPath) {
+                console.log(`[METADATA] Using cookies from: ${cookiesPath}`);
+                args.push('--cookies', cookiesPath);
+            }
+
+            const output = await ytDlpWrap.execPromise(args);
             const metadata = JSON.parse(output);
 
             console.log(`[METADATA] ✓ Metadata received. Title: "${metadata.title}"`);
