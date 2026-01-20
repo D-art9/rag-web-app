@@ -7,10 +7,9 @@ const binaryName = isWindows ? 'yt-dlp.exe' : 'yt-dlp';
 // Resolve to the root backend folder
 const binaryPath = path.resolve(__dirname, '../../', binaryName);
 
-// Use a fixed version to avoid API rate limits and ensure stability
-// See: https://github.com/yt-dlp/yt-dlp/releases
-const VERSION = '2024.08.06';
-const DOWNLOAD_URL = `https://github.com/yt-dlp/yt-dlp/releases/download/${VERSION}/${binaryName}`;
+// Use the latest release directly to ensure we have the newest fixes
+// This URL redirects to the latest binary and bypasses the API rate limit check
+const DOWNLOAD_URL = `https://github.com/yt-dlp/yt-dlp/releases/latest/download/${binaryName}`;
 
 (async () => {
     console.log('--- YT-DLP DIRECT DOWNLOAD SCRIPT ---');
