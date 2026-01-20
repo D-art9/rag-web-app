@@ -2,7 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import YtDlpWrap from 'yt-dlp-wrap';
 
-const binaryPath = path.resolve(__dirname, '../../yt-dlp.exe');
+const isWindows = process.platform === 'win32';
+const binaryName = isWindows ? 'yt-dlp.exe' : 'yt-dlp';
+const binaryPath = path.resolve(__dirname, '../../', binaryName);
 const ytDlpWrap = new YtDlpWrap(binaryPath);
 
 /**

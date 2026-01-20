@@ -19,7 +19,7 @@ interface VectorEntry {
  * Simple File-Based Vector Database
  * Uses @xenova/transformers for embeddings and cosine similarity for search
  */
-class VectorDBClient {
+export class VectorDBClient {
     private embeddingModel: any = null;
     private vectors: VectorEntry[] = [];
     private readonly storePath: string;
