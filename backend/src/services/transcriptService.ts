@@ -42,6 +42,8 @@ export const transcriptService = {
                 '--write-sub',
                 '--sub-lang', 'en',
                 '--skip-download',
+                '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                '--extractor-args', 'youtube:player_client=android',
                 '--output', vttPath
             ]);
 
@@ -107,7 +109,18 @@ export const transcriptService = {
             await ensureBinary();
             console.log(`[METADATA] Binary verified, calling yt-dlp.getVideoInfo()...`);
 
-            const metadata = await ytDlpWrap.getVideoInfo(videoUrl);
+            // Use custom execution to pass anti-bot headers
+            // We use --dump-json to get the metadata
+            const output = await ytDlpWrap.execPromise([
+                videoUrl,
+                '--dump-json',
+                '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                // Use Android client to bypass some bot checks
+                '--extractor-args', 'youtube:player_client=android',
+                '--no-playlist'
+            ]);
+
+            const metadata = JSON.parse(output);
 
             console.log(`[METADATA] ✓ Metadata received. Title: "${metadata.title}"`);
             console.log(`[METADATA] ✓ Thumbnail URL: ${metadata.thumbnail ? 'Found' : 'Not found'}`);
