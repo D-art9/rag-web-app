@@ -28,7 +28,7 @@ const ensureBinary = async () => {
                 responseType: 'stream'
             });
 
-            response.data.pipe(writer);
+            (response.data as any).pipe(writer);
 
             await new Promise((resolve, reject) => {
                 writer.on('finish', resolve);
