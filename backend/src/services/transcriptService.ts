@@ -1,118 +1,143 @@
-import { Innertube, UniversalCache } from 'youtubei.js';
-import { HttpsProxyAgent } from 'https-proxy-agent';
+import fs from 'fs';
+import path from 'path';
+import YtDlpWrap from 'yt-dlp-wrap';
 
-// Singleton instance
-let innertube: Innertube | null = null;
+const isWindows = process.platform === 'win32';
+const binaryName = isWindows ? 'yt-dlp.exe' : 'yt-dlp';
+const binaryPath = path.resolve(__dirname, '../../', binaryName);
+const ytDlpWrap = new YtDlpWrap(binaryPath);
 
-const getInnertube = async () => {
-    if (!innertube) {
-        console.log('[INGEST] Initializing YouTubei.js (Innertube)...');
-
-        const options: any = {
-            cache: new UniversalCache(false),
-            generate_session_locally: true,
-            // Inject tokens and use ANDROID client (more robust)
-            cookie: process.env.YOUTUBE_COOKIE,
-            po_token: process.env.YOUTUBE_PO_TOKEN,
-            visitor_data: process.env.YOUTUBE_VISITOR_DATA,
-            device_client: 'ANDROID',
-        };
-
-        // Add Proxy if configured (The Definitive Fix)
-        if (process.env.YOUTUBE_PROXY) {
-            console.log('[INGEST] Using Proxy for YouTube requests.');
-            options.http_agent = new HttpsProxyAgent(process.env.YOUTUBE_PROXY);
-            options.https_agent = new HttpsProxyAgent(process.env.YOUTUBE_PROXY);
-        }
-
-        innertube = await Innertube.create(options);
-        console.log('[INGEST] YouTubei.js initialized (ANDROID client). Auth:', !!process.env.YOUTUBE_COOKIE, 'Proxy:', !!process.env.YOUTUBE_PROXY);
+/**
+ * Ensures the yt-dlp binary exists. Downloads it if missing.
+ */
+const ensureBinary = async () => {
+    if (!fs.existsSync(binaryPath)) {
+        console.log('[INGEST] yt-dlp binary not found. Downloading...');
+        await YtDlpWrap.downloadFromGithub(binaryPath);
+        console.log('[INGEST] yt-dlp binary downloaded successfully.');
     }
-    return innertube;
+};
+
+/**
+ * Helper to get a WRITABLE path for cookies from Environment Variable.
+ */
+const getCookiesPath = (): string | null => {
+    if (process.env.YOUTUBE_COOKIE) {
+        const cookieContent = process.env.YOUTUBE_COOKIE;
+        // Create a Netscape format cookie file content roughly, or just pass the header string if yt-dlp supports it?
+        // yt-dlp --cookies-from-browser is complex on server. 
+        // Best way: If user provided the "header" string (Cookie: ...), we can try to pass it as header.
+        // BUT, yt-dlp --add-header "Cookie: ..." works best.
+        return null; // We will use --add-header for simplicity
+    }
+    return null;
 };
 
 export const transcriptService = {
     /**
-     * Extracts transcript using YouTubei.js (Innertube).
-     * This library mimics the internal Android/Web clients and is highly robust.
+     * Extracts transcript using yt-dlp with PROXY and COOKIE support.
      */
     extractTranscript: async (videoUrl: string): Promise<string> => {
         try {
             console.log(`[INGEST] Starting transcript extraction for: ${videoUrl}`);
+            await ensureBinary();
 
-            // Extract Video ID
+            // Prepare arguments
+            const args = [
+                videoUrl,
+                '--write-auto-sub', // Get auto-generated captions
+                '--sub-lang', 'en',
+                '--skip-download',  // Don't download video
+                '--output', path.resolve(__dirname, '../../temp/%(id)s'), // Output to temp
+            ];
+
+            // 1. ADD PROXY (The King)
+            if (process.env.YOUTUBE_PROXY) {
+                console.log('[INGEST] Using Proxy for yt-dlp.');
+                args.push('--proxy', process.env.YOUTUBE_PROXY);
+            }
+
+            // 2. ADD COOKIES (The Queen)
+            if (process.env.YOUTUBE_COOKIE) {
+                console.log('[INGEST] Using Cookie for yt-dlp.');
+                args.push('--add-header', `Cookie:${process.env.YOUTUBE_COOKIE}`);
+            }
+
+            // Execute
+            console.log('[INGEST] Running yt-dlp...');
+            await ytDlpWrap.execPromise(args);
+
+            // Find the downloaded VTT file
+            // Expected filename format: temp/VIDEOID.en.vtt
             const videoIdMatch = videoUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
-            const videoId = videoIdMatch ? videoIdMatch[1] : null;
+            const videoId = videoIdMatch ? videoIdMatch[1] : '';
 
-            if (!videoId) {
-                throw new Error('Invalid YouTube URL');
+            const tempDir = path.resolve(__dirname, '../../temp');
+            // Try explicit filename first
+            const vttPath = path.join(tempDir, `${videoId}.en.vtt`);
+
+            if (!fs.existsSync(vttPath)) {
+                throw new Error('Transcript file not created by yt-dlp.');
             }
 
-            const yt = await getInnertube();
+            const vttContent = fs.readFileSync(vttPath, 'utf-8');
 
-            console.log(`[INGEST] Fetching video info for ID: ${videoId}`);
-            const info = await yt.getInfo(videoId);
+            // Cleanup
+            try { fs.unlinkSync(vttPath); } catch (e) { }
 
-            console.log(`[INGEST] Fetching transcript data...`);
-            const transcriptData = await info.getTranscript();
-
-            if (!transcriptData || !transcriptData.transcript) {
-                throw new Error('No transcript available for this video.');
-            }
-
-            // The transcript data typically contains segments with text
-            // We need to access the underlying content array
-            const segments = transcriptData.transcript.content?.body?.initial_segments || [];
-
-            // Map and join the text
-            const fullText = segments
-                .map((seg: any) => seg.snippet?.text || '')
-                .join(' ')
-                .replace(/\s+/g, ' ')
-                .trim();
+            // Parse VTT (Simple)
+            const lines = vttContent.split('\n');
+            const textLines = lines.filter(line => {
+                const l = line.trim();
+                return l && !l.startsWith('WEBVTT') && !l.startsWith('NOTE') && !l.includes('-->') && !/^\d+$/.test(l);
+            });
+            const uniqueLines = [...new Set(textLines.map(l => l.replace(/<\/?[^>]+(>|$)/g, "")))]; // Dedupe and strip tags
+            const fullText = uniqueLines.join(' ');
 
             console.log(`[INGEST] ✓ Transcript extracted. Length: ${fullText.length} chars.`);
             return fullText;
 
         } catch (error: any) {
             console.error('Transcript Service Error Detail:', error);
-
-            // Handle specific errors
-            if (error.message.includes('Sign in') || error.message.includes('cookies') || error.message.includes('No transcript')) {
-                throw new Error('Could not retrieve transcript. YouTube may be blocking the request or no captions exist.');
+            if (error.message.includes('Sign in') || error.message.includes('429') || error.message.includes('bot')) {
+                throw new Error('YouTube blocked the request. Please check Proxy/Cookie settings.');
             }
-
             throw new Error('Could not retrieve transcript. ' + (error.message || 'Unknown error'));
         }
     },
 
     /**
-     * Extracts video metadata using YouTubei.js (Innertube)
+     * Extracts video metadata using yt-dlp with PROXY support
      */
     getVideoMetadata: async (videoUrl: string): Promise<{ title: string; thumbnail: string }> => {
         try {
             console.log(`[METADATA] Starting metadata fetch for: ${videoUrl}`);
+            await ensureBinary();
 
-            // Extract Video ID
-            const videoIdMatch = videoUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
-            const videoId = videoIdMatch ? videoIdMatch[1] : null;
+            const args = [
+                videoUrl,
+                '--dump-json',
+                '--no-playlist'
+            ];
 
-            if (!videoId) {
-                return { title: 'YouTube Video', thumbnail: '' };
+            // 1. ADD PROXY
+            if (process.env.YOUTUBE_PROXY) {
+                args.push('--proxy', process.env.YOUTUBE_PROXY);
             }
 
-            const yt = await getInnertube();
-            const info = await yt.getBasicInfo(videoId);
+            // 2. ADD COOKIES
+            if (process.env.YOUTUBE_COOKIE) {
+                args.push('--add-header', `Cookie:${process.env.YOUTUBE_COOKIE}`);
+            }
 
-            const title = info.basic_info.title || 'Untitled Video';
-            // Get the largest thumbnail
-            const thumbnail = info.basic_info.thumbnail?.[0]?.url || '';
+            const output = await ytDlpWrap.execPromise(args);
+            const metadata = JSON.parse(output);
 
-            console.log(`[METADATA] ✓ Metadata received. Title: "${title}"`);
+            console.log(`[METADATA] ✓ Metadata received. Title: "${metadata.title}"`);
 
             return {
-                title,
-                thumbnail
+                title: metadata.title || 'Untitled Video',
+                thumbnail: metadata.thumbnail || ''
             };
         } catch (error: any) {
             console.error('[METADATA] ✗ Failed to fetch metadata:', error.message);
