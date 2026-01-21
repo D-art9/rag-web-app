@@ -158,46 +158,47 @@ export const transcriptService = {
             await ensureBinary();
             console.log(`[METADATA] Binary verified, calling yt-dlp.getVideoInfo()...`);
 
-            videoUrl,
+            const args = [
+                videoUrl,
                 '--dump-json',
                 '--extractor-args', 'youtube:player_client=android',
                 '--no-playlist'
             ];
 
-if (cookiesPath) {
-    console.log(`[METADATA] Using cookies from: ${cookiesPath}`);
-    args.push('--cookies', cookiesPath);
-}
+            if (cookiesPath) {
+                console.log(`[METADATA] Using cookies from: ${cookiesPath}`);
+                args.push('--cookies', cookiesPath);
+            }
 
-const output = await ytDlpWrap.execPromise(args);
+            const output = await ytDlpWrap.execPromise(args);
 
-// Clean up
-if (cookiesPath && cookiesPath.includes('cookies_')) {
-    try { fs.unlinkSync(cookiesPath); } catch (e) { }
-}
+            // Clean up
+            if (cookiesPath && cookiesPath.includes('cookies_')) {
+                try { fs.unlinkSync(cookiesPath); } catch (e) { }
+            }
 
-const metadata = JSON.parse(output);
+            const metadata = JSON.parse(output);
 
-console.log(`[METADATA] ✓ Metadata received. Title: "${metadata.title}"`);
-console.log(`[METADATA] ✓ Thumbnail URL: ${metadata.thumbnail ? 'Found' : 'Not found'}`);
+            console.log(`[METADATA] ✓ Metadata received. Title: "${metadata.title}"`);
+            console.log(`[METADATA] ✓ Thumbnail URL: ${metadata.thumbnail ? 'Found' : 'Not found'}`);
 
-return {
-    title: metadata.title || 'Untitled Video',
-    thumbnail: metadata.thumbnail || ''
-};
+            return {
+                title: metadata.title || 'Untitled Video',
+                thumbnail: metadata.thumbnail || ''
+            };
         } catch (error: any) {
-    // Clean up
-    if (cookiesPath && cookiesPath.includes('cookies_')) {
-        try { fs.unlinkSync(cookiesPath); } catch (e) { }
-    }
-    console.error('[METADATA] ✗ Failed to fetch metadata:', error.message);
-    console.error('[METADATA] ✗ Full error:', error);
-    // Fallback to URL if metadata extraction fails
-    return {
-        title: 'YouTube Video',
-        thumbnail: ''
-    };
-}
+            // Clean up
+            if (cookiesPath && cookiesPath.includes('cookies_')) {
+                try { fs.unlinkSync(cookiesPath); } catch (e) { }
+            }
+            console.error('[METADATA] ✗ Failed to fetch metadata:', error.message);
+            console.error('[METADATA] ✗ Full error:', error);
+            // Fallback to URL if metadata extraction fails
+            return {
+                title: 'YouTube Video',
+                thumbnail: ''
+            };
+        }
     }
 };
 
