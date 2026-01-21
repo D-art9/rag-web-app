@@ -59,8 +59,7 @@ const getWritableCookiesPath = (): string | null => {
 export const transcriptService = {
     extractTranscript: async (videoUrl: string): Promise<string> => {
         const vttPath = path.resolve(__dirname, `temp_${Date.now()}.vtt`);
-        // Note: We deliberately DO NOT use cookies with the 'android' client 
-        // because it doesn't support them and often doesn't need them to bypass 429s.
+        const cookiesPath = getWritableCookiesPath();
 
         try {
             console.log(`[INGEST] Starting transcript extraction for: ${videoUrl}`);
@@ -74,14 +73,25 @@ export const transcriptService = {
                 '--write-sub',
                 '--sub-lang', 'en',
                 '--skip-download',
-                // Android client robustly bypasses 429s without needing cookies for public videos
-                '--extractor-args', 'youtube:player_client=android',
+                // 'mweb' (Mobile Web) is the best of both worlds:
+                // 1. Supports Cookies (unlike 'android'/'ios' apps) -> Fixes "Sign in" error
+                // 2. Uses Mobile User-Agent -> Fixes "429 Too Many Requests" from desktop IPs
+                '--extractor-args', 'youtube:player_client=mweb',
                 '--output', vttPath
             ];
 
-            // NO COOKIES added here to avoid "client does not support cookies" error
+            // Append cookies if found (CRITICAL for 'mweb' to pass "Sign in" check)
+            if (cookiesPath) {
+                console.log(`[INGEST] Using cookies from writable path: ${cookiesPath}`);
+                args.push('--cookies', cookiesPath);
+            }
 
             await ytDlpWrap.execPromise(args);
+
+            // Clean up writable cookies if they were created in temp dir (filename contains timestamp)
+            if (cookiesPath && cookiesPath.includes('cookies_')) {
+                try { fs.unlinkSync(cookiesPath); } catch (e) { }
+            }
 
             console.log(`[INGEST] yt-dlp command completed, searching for VTT file...`);
 
@@ -115,6 +125,11 @@ export const transcriptService = {
             return cleanText;
 
         } catch (error: any) {
+            // Cleanup cookies
+            try {
+                if (cookiesPath && cookiesPath.includes('cookies_')) fs.unlinkSync(cookiesPath);
+            } catch (e) { }
+
             // Cleanup vtt
             try {
                 const dir = path.dirname(vttPath);
@@ -139,6 +154,7 @@ export const transcriptService = {
      * Extracts video metadata (title, thumbnail) using yt-dlp
      */
     getVideoMetadata: async (videoUrl: string): Promise<{ title: string; thumbnail: string }> => {
+        const cookiesPath = getWritableCookiesPath();
         try {
             console.log(`[METADATA] Starting metadata fetch for: ${videoUrl}`);
             await ensureBinary();
@@ -147,13 +163,21 @@ export const transcriptService = {
             const args = [
                 videoUrl,
                 '--dump-json',
-                '--extractor-args', 'youtube:player_client=android',
+                '--extractor-args', 'youtube:player_client=mweb',
                 '--no-playlist'
             ];
 
-            // NO COOKIES added here
+            if (cookiesPath) {
+                console.log(`[METADATA] Using cookies from: ${cookiesPath}`);
+                args.push('--cookies', cookiesPath);
+            }
 
             const output = await ytDlpWrap.execPromise(args);
+
+            // Clean up
+            if (cookiesPath && cookiesPath.includes('cookies_')) {
+                try { fs.unlinkSync(cookiesPath); } catch (e) { }
+            }
 
             const metadata = JSON.parse(output);
 
@@ -165,6 +189,10 @@ export const transcriptService = {
                 thumbnail: metadata.thumbnail || ''
             };
         } catch (error: any) {
+            // Clean up
+            if (cookiesPath && cookiesPath.includes('cookies_')) {
+                try { fs.unlinkSync(cookiesPath); } catch (e) { }
+            }
             console.error('[METADATA] ✗ Failed to fetch metadata:', error.message);
             console.error('[METADATA] ✗ Full error:', error);
             // Fallback to URL if metadata extraction fails
