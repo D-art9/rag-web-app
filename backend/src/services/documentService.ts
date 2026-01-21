@@ -13,31 +13,57 @@ export interface Document {
 /**
  * Chunk transcript into smaller pieces for embedding
  */
-function chunkTranscript(transcript: string, maxChunkSize: number = 1200): { text: string; index: number }[] {
+/**
+ * Chunk transcript into smaller pieces for embedding.
+ * Uses a robust strategy: Sentences -> Words -> Characters to ensure chunks fit within limits.
+ */
+function chunkTranscript(transcript: string, maxChunkSize: number = 1000): { text: string; index: number }[] {
     const chunks: { text: string; index: number }[] = [];
 
-    // Split by sentences first
-    const sentences = transcript.match(/[^.!?]+[.!?]+/g) || [transcript];
+    // Clean up extra whitespace first
+    const cleanText = transcript.replace(/\s+/g, ' ').trim();
 
-    let currentChunk = '';
-    let chunkIndex = 0;
+    // Safety check for empty text
+    if (!cleanText) return [];
 
-    for (const sentence of sentences) {
-        if ((currentChunk + sentence).length > maxChunkSize && currentChunk.length > 0) {
-            // Save current chunk and start new one
-            chunks.push({ text: currentChunk.trim(), index: chunkIndex++ });
-            currentChunk = sentence;
-        } else {
-            currentChunk += ' ' + sentence;
+    let start = 0;
+    while (start < cleanText.length) {
+        // Calculate potential end position
+        let end = start + maxChunkSize;
+
+        if (end >= cleanText.length) {
+            chunks.push({ text: cleanText.slice(start).trim(), index: chunks.length });
+            break;
         }
+
+        // Try to find a sentence break (.!?) near the end
+        let breakPoint = -1;
+        const lookBackWindow = Math.min(200, maxChunkSize / 2); // Look back 200 chars
+        const chunkSlice = cleanText.slice(end - lookBackWindow, end);
+
+        // Prioritize explicit sentence endings
+        const sentenceMatch = chunkSlice.lastIndexOf('.');
+        if (sentenceMatch !== -1) {
+            breakPoint = end - lookBackWindow + sentenceMatch + 1;
+        } else {
+            // Fallback: Try to break at the last space
+            breakPoint = cleanText.lastIndexOf(' ', end);
+        }
+
+        // If no valid break point found (extremely long word?), just hard break
+        if (breakPoint <= start) {
+            breakPoint = end;
+        }
+
+        const chunkText = cleanText.slice(start, breakPoint).trim();
+        if (chunkText.length > 0) {
+            chunks.push({ text: chunkText, index: chunks.length });
+        }
+
+        start = breakPoint;
     }
 
-    // Add final chunk
-    if (currentChunk.trim().length > 0) {
-        chunks.push({ text: currentChunk.trim(), index: chunkIndex });
-    }
-
-    const avgSize = chunks.length > 0 ? Math.round(transcript.length / chunks.length) : 0;
+    const avgSize = chunks.length > 0 ? Math.round(cleanText.length / chunks.length) : 0;
     console.log(`[CHUNKING] Created ${chunks.length} chunks (avg size: ${avgSize} chars, max: ${maxChunkSize})`);
 
     return chunks;
