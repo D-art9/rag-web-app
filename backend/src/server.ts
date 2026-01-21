@@ -18,10 +18,18 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Required for Render (and other proxies) to correctly handle IPs for Rate Limiting
+app.set('trust proxy', 1);
+
 // Connect to Databases
 const initializeDatabases = async () => {
-    await connectDB();
-    await connectToVectorDB();
+    try {
+        await connectDB();
+        await connectToVectorDB();
+    } catch (err) {
+        console.error('CRITICAL: Failed to initialize databases. Exiting...', err);
+        process.exit(1);
+    }
 };
 
 initializeDatabases().catch(err => {
