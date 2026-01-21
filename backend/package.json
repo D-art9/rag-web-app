@@ -20,6 +20,7 @@
     "express-rate-limit": "^8.2.1",
     "mongoose": "^6.10.0",
     "youtube-transcript": "^1.2.1",
+    "youtubei.js": "^16.0.1",
     "yt-dlp-wrap": "^2.3.12"
   },
   "devDependencies": {
