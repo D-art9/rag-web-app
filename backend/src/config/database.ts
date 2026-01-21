@@ -20,7 +20,8 @@ export const connectDB = async () => {
         console.log('MongoDB connected successfully.');
     } catch (error) {
         console.error('Error connecting to MongoDB:', error);
-        console.log('Server will continue running without database connection.');
+        // Throw error so server.ts can exit and Render can restart
+        throw error;
     }
 };
 
