@@ -7,16 +7,57 @@ const binaryName = isWindows ? 'yt-dlp.exe' : 'yt-dlp';
 const binaryPath = path.resolve(__dirname, '../../', binaryName);
 const ytDlpWrap = new YtDlpWrap(binaryPath);
 
+import axios from 'axios';
+
+// ... imports ...
+
 /**
- * Ensures the yt-dlp binary exists. Downloads it if missing.
+ * Ensures the yt-dlp binary exists. Downloads it DIRECTLY (bypassing GitHub API rate limits).
  */
 const ensureBinary = async () => {
     if (!fs.existsSync(binaryPath)) {
-        console.log('[INGEST] yt-dlp binary not found. Downloading...');
-        await YtDlpWrap.downloadFromGithub(binaryPath);
-        console.log('[INGEST] yt-dlp binary downloaded successfully.');
+        console.log('[INGEST] yt-dlp binary not found. Downloading via Direct Link...');
+        // Direct download URL for the latest release binary (Linux/Unix for Render)
+        const downloadUrl = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp'; // Linux binary
+
+        try {
+            const writer = fs.createWriteStream(binaryPath);
+            const response = await axios({
+                url: downloadUrl,
+                method: 'GET',
+                responseType: 'stream'
+            });
+
+            response.data.pipe(writer);
+
+            await new Promise((resolve, reject) => {
+                writer.on('finish', resolve);
+                writer.on('error', reject);
+            });
+
+            // Make executable
+            if (!isWindows) {
+                fs.chmodSync(binaryPath, '755');
+            }
+            console.log('[INGEST] yt-dlp binary downloaded successfully.');
+        } catch (err) {
+            console.error('[INGEST] Failed to download yt-dlp binary:', err);
+            throw new Error('Failed to download yt-dlp dependency.');
+        }
     }
 };
+
+// ... existing code ...
+
+        } catch (error: any) {
+    console.error('Transcript Service Error Detail:', error);
+    const errorMessage = error?.message || String(error); // SAEF ACCESS
+
+    if (errorMessage.includes('Sign in') || errorMessage.includes('429') || errorMessage.includes('bot')) {
+        throw new Error('YouTube blocked the request. Please check Proxy/Cookie settings.');
+    }
+    throw new Error('Could not retrieve transcript. ' + errorMessage);
+}
 
 /**
  * Helper to get a WRITABLE path for cookies from Environment Variable.
