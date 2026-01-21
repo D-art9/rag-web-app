@@ -1,15 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 import YtDlpWrap from 'yt-dlp-wrap';
+import axios from 'axios';
 
 const isWindows = process.platform === 'win32';
 const binaryName = isWindows ? 'yt-dlp.exe' : 'yt-dlp';
 const binaryPath = path.resolve(__dirname, '../../', binaryName);
 const ytDlpWrap = new YtDlpWrap(binaryPath);
-
-import axios from 'axios';
-
-// ... imports ...
 
 /**
  * Ensures the yt-dlp binary exists. Downloads it DIRECTLY (bypassing GitHub API rate limits).
@@ -31,9 +28,15 @@ const ensureBinary = async () => {
             (response.data as any).pipe(writer);
 
             await new Promise((resolve, reject) => {
-                writer.on('finish', resolve);
+                writer.on('finish', () => {
+                    writer.close(); // Ensure file descriptor is closed
+                    resolve(null);
+                });
                 writer.on('error', reject);
             });
+
+            // Wait a small moment for OS to release file lock (Fix ETXTBSY)
+            await new Promise(r => setTimeout(r, 500));
 
             // Make executable
             if (!isWindows) {
@@ -45,25 +48,6 @@ const ensureBinary = async () => {
             throw new Error('Failed to download yt-dlp dependency.');
         }
     }
-};
-
-// ... existing code ...
-
-
-
-/**
- * Helper to get a WRITABLE path for cookies from Environment Variable.
- */
-const getCookiesPath = (): string | null => {
-    if (process.env.YOUTUBE_COOKIE) {
-        const cookieContent = process.env.YOUTUBE_COOKIE;
-        // Create a Netscape format cookie file content roughly, or just pass the header string if yt-dlp supports it?
-        // yt-dlp --cookies-from-browser is complex on server. 
-        // Best way: If user provided the "header" string (Cookie: ...), we can try to pass it as header.
-        // BUT, yt-dlp --add-header "Cookie: ..." works best.
-        return null; // We will use --add-header for simplicity
-    }
-    return null;
 };
 
 export const transcriptService = {
@@ -87,13 +71,17 @@ export const transcriptService = {
             // 1. ADD PROXY (The King)
             if (process.env.YOUTUBE_PROXY) {
                 console.log('[INGEST] Using Proxy for yt-dlp.');
-                args.push('--proxy', process.env.YOUTUBE_PROXY);
+                let proxyUrl = process.env.YOUTUBE_PROXY;
+                if (!proxyUrl.startsWith('http')) proxyUrl = `http://${proxyUrl}`;
+                args.push('--proxy', proxyUrl);
             }
 
             // 2. ADD COOKIES (The Queen)
             if (process.env.YOUTUBE_COOKIE) {
                 console.log('[INGEST] Using Cookie for yt-dlp.');
+                // Quote the cookie string to be safe, though exec functions usually handle args array well
                 args.push('--add-header', `Cookie:${process.env.YOUTUBE_COOKIE}`);
+                args.push('--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
             }
 
             // Execute
@@ -110,7 +98,7 @@ export const transcriptService = {
             const vttPath = path.join(tempDir, `${videoId}.en.vtt`);
 
             if (!fs.existsSync(vttPath)) {
-                throw new Error('Transcript file not created by yt-dlp.');
+                throw new Error('Transcript file not created by yt-dlp (Request might have failed silently or no captions).');
             }
 
             const vttContent = fs.readFileSync(vttPath, 'utf-8');
@@ -132,10 +120,11 @@ export const transcriptService = {
 
         } catch (error: any) {
             console.error('Transcript Service Error Detail:', error);
-            if (error.message.includes('Sign in') || error.message.includes('429') || error.message.includes('bot')) {
+            const errorMessage = error?.message || String(error);
+            if (errorMessage.includes('Sign in') || errorMessage.includes('429') || errorMessage.includes('bot')) {
                 throw new Error('YouTube blocked the request. Please check Proxy/Cookie settings.');
             }
-            throw new Error('Could not retrieve transcript. ' + (error.message || 'Unknown error'));
+            throw new Error('Could not retrieve transcript. ' + errorMessage);
         }
     },
 
@@ -155,12 +144,15 @@ export const transcriptService = {
 
             // 1. ADD PROXY
             if (process.env.YOUTUBE_PROXY) {
-                args.push('--proxy', process.env.YOUTUBE_PROXY);
+                let proxyUrl = process.env.YOUTUBE_PROXY;
+                if (!proxyUrl.startsWith('http')) proxyUrl = `http://${proxyUrl}`;
+                args.push('--proxy', proxyUrl);
             }
 
             // 2. ADD COOKIES
             if (process.env.YOUTUBE_COOKIE) {
                 args.push('--add-header', `Cookie:${process.env.YOUTUBE_COOKIE}`);
+                args.push('--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
             }
 
             const output = await ytDlpWrap.execPromise(args);
