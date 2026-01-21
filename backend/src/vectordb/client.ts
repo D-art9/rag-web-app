@@ -21,6 +21,7 @@ interface VectorEntry {
  */
 export class VectorDBClient {
     private embeddingModel: any = null;
+    private loadingPromise: Promise<any> | null = null; // Lock for concurrent loading
     private vectors: VectorEntry[] = [];
     private readonly storePath: string;
 
@@ -29,43 +30,36 @@ export class VectorDBClient {
         this.loadVectors();
     }
 
-    /**
-     * Load vectors from disk
-     */
-    private loadVectors() {
-        try {
-            if (fs.existsSync(this.storePath)) {
-                const data = fs.readFileSync(this.storePath, 'utf-8');
-                this.vectors = JSON.parse(data);
-                console.log(`[VECTORDB] Loaded ${this.vectors.length} vectors from disk`);
-            }
-        } catch (error) {
-            console.error('[VECTORDB] Error loading vectors:', error);
-            this.vectors = [];
-        }
-    }
+    // ... loadVectors ...
+
+    // ... saveVectors ...
 
     /**
-     * Save vectors to disk
-     */
-    private saveVectors() {
-        try {
-            fs.writeFileSync(this.storePath, JSON.stringify(this.vectors, null, 2));
-        } catch (error) {
-            console.error('[VECTORDB] Error saving vectors:', error);
-        }
-    }
-
-    /**
-     * Initialize the embedding model
+     * Initialize the embedding model (Singleton with Race Condition Fix)
      */
     private async initEmbeddingModel(): Promise<any> {
-        if (!this.embeddingModel) {
-            console.log('[VECTORDB] Loading embedding model (all-MiniLM-L6-v2)...');
-            this.embeddingModel = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
-            console.log('[VECTORDB] ✓ Embedding model loaded');
-        }
-        return this.embeddingModel;
+        // 1. If loaded, return immediately
+        if (this.embeddingModel) return this.embeddingModel;
+
+        // 2. If already loading, return the existing promise
+        if (this.loadingPromise) return this.loadingPromise;
+
+        // 3. Start loading
+        console.log('[VECTORDB] Loading embedding model (all-MiniLM-L6-v2)...');
+        this.loadingPromise = (async () => {
+            try {
+                const model = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+                this.embeddingModel = model;
+                console.log('[VECTORDB] ✓ Embedding model loaded');
+                return model;
+            } catch (error) {
+                console.error('[VECTORDB] Failed to load embedding model:', error);
+                this.loadingPromise = null; // Reset on failure so we can try again
+                throw error;
+            }
+        })();
+
+        return this.loadingPromise;
     }
 
     /**
