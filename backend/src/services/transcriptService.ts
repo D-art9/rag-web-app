@@ -32,7 +32,7 @@ async function fetchFromInvidious(videoId: string): Promise<string> {
             console.log(`[INGEST] Attempting ${instance}...`);
             // fetch video details to get caption tracks
             const infoRes = await axios.get(`${instance}/api/v1/videos/${videoId}`, { timeout: 5000 });
-            const captions = infoRes.data.captions; // array of { label, language, url }
+            const captions = (infoRes.data as any).captions; // array of { label, language, url }
 
             if (!captions || captions.length === 0) {
                 console.warn(`[INGEST] No captions found on ${instance}`);
@@ -48,7 +48,7 @@ async function fetchFromInvidious(videoId: string): Promise<string> {
 
             const captionRes = await axios.get(captionUrl, { timeout: 5000 });
             // Invidious returns VTT format usually
-            const vttText = captionRes.data; // This is a VTT string
+            const vttText = captionRes.data as string; // This is a VTT string
 
             // Simple VTT parse
             const lines = vttText.split('\n');
