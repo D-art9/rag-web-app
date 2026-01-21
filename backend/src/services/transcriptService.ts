@@ -8,9 +8,12 @@ const getInnertube = async () => {
         console.log('[INGEST] Initializing YouTubei.js (Innertube)...');
         innertube = await Innertube.create({
             cache: new UniversalCache(false),
-            generate_session_locally: true
+            generate_session_locally: true,
+            // Inject tokens to bypass "FAILED_PRECONDITION" (Bot detection)
+            po_token: process.env.YOUTUBE_PO_TOKEN,
+            visitor_data: process.env.YOUTUBE_VISITOR_DATA
         });
-        console.log('[INGEST] YouTubei.js initialized.');
+        console.log('[INGEST] YouTubei.js initialized with tokens:', !!process.env.YOUTUBE_PO_TOKEN);
     }
     return innertube;
 };
