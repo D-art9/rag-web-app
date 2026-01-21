@@ -1,4 +1,5 @@
 import { Innertube, UniversalCache } from 'youtubei.js';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 // Singleton instance
 let innertube: Innertube | null = null;
@@ -6,7 +7,8 @@ let innertube: Innertube | null = null;
 const getInnertube = async () => {
     if (!innertube) {
         console.log('[INGEST] Initializing YouTubei.js (Innertube)...');
-        innertube = await Innertube.create({
+
+        const options: any = {
             cache: new UniversalCache(false),
             generate_session_locally: true,
             // Inject tokens and use ANDROID client (more robust)
@@ -14,8 +16,17 @@ const getInnertube = async () => {
             po_token: process.env.YOUTUBE_PO_TOKEN,
             visitor_data: process.env.YOUTUBE_VISITOR_DATA,
             device_client: 'ANDROID',
-        });
-        console.log('[INGEST] YouTubei.js initialized (ANDROID client). Auth:', !!process.env.YOUTUBE_COOKIE);
+        };
+
+        // Add Proxy if configured (The Definitive Fix)
+        if (process.env.YOUTUBE_PROXY) {
+            console.log('[INGEST] Using Proxy for YouTube requests.');
+            options.http_agent = new HttpsProxyAgent(process.env.YOUTUBE_PROXY);
+            options.https_agent = new HttpsProxyAgent(process.env.YOUTUBE_PROXY);
+        }
+
+        innertube = await Innertube.create(options);
+        console.log('[INGEST] YouTubei.js initialized (ANDROID client). Auth:', !!process.env.YOUTUBE_COOKIE, 'Proxy:', !!process.env.YOUTUBE_PROXY);
     }
     return innertube;
 };
