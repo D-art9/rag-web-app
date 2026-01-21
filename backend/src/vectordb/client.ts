@@ -111,17 +111,31 @@ export class VectorDBClient {
     ): Promise<void> {
         console.log(`[VECTORDB] Generating embeddings for ${chunks.length} chunks (videoId: ${videoId})...`);
 
-        for (const chunk of chunks) {
-            const embedding = await this.generateEmbedding(chunk.text);
+        // Process in batches to improve speed while avoiding OOM
+        const BATCH_SIZE = 8;
 
-            this.vectors.push({
-                id: `${videoId}_chunk_${chunk.index}`,
-                videoId,
-                chunkIndex: chunk.index,
-                text: chunk.text,
-                embedding,
-                metadata
-            });
+        for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+            const batch = chunks.slice(i, i + BATCH_SIZE);
+            const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+            const totalBatches = Math.ceil(chunks.length / BATCH_SIZE);
+
+            console.log(`[VECTORDB] Processing batch ${batchNum}/${totalBatches}`);
+
+            await Promise.all(batch.map(async (chunk) => {
+                try {
+                    const embedding = await this.generateEmbedding(chunk.text);
+                    this.vectors.push({
+                        id: `${videoId}_chunk_${chunk.index}`,
+                        videoId,
+                        chunkIndex: chunk.index,
+                        text: chunk.text,
+                        embedding,
+                        metadata
+                    });
+                } catch (err) {
+                    console.error(`[VECTORDB] Failed to embed chunk ${chunk.index}:`, err);
+                }
+            }));
         }
 
         this.saveVectors();

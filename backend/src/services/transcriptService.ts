@@ -73,8 +73,8 @@ export const transcriptService = {
                 '--write-sub',
                 '--sub-lang', 'en',
                 '--skip-download',
-                // Mimic Android client to avoid datacenter IP blocks (429s)
-                '--extractor-args', 'youtube:player_client=android',
+                // Mimic iOS client (often supports cookies better than Android and bypasses 429s)
+                '--extractor-args', 'youtube:player_client=ios',
                 '--output', vttPath
             ];
 

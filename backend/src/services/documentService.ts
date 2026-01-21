@@ -13,7 +13,7 @@ export interface Document {
 /**
  * Chunk transcript into smaller pieces for embedding
  */
-function chunkTranscript(transcript: string, maxChunkSize: number = 800): { text: string; index: number }[] {
+function chunkTranscript(transcript: string, maxChunkSize: number = 1200): { text: string; index: number }[] {
     const chunks: { text: string; index: number }[] = [];
 
     // Split by sentences first
