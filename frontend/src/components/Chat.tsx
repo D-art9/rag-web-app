@@ -44,7 +44,8 @@ const TypewriterMessage: React.FC<{ text: string; onComplete?: () => void }> = (
         }, 15); // Speed of typing
 
         return () => clearInterval(interval);
-    }, [text, onComplete]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [text]);
 
     return <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayedText}</ReactMarkdown>;
 };
@@ -226,8 +227,9 @@ const Chat: React.FC<ChatProps> = ({ videoUrl, videoId, onSelectVideo }) => {
                                     <TypewriterMessage
                                         text={msg.text}
                                         onComplete={() => {
-                                            // Optional: remove isTyping flag to prevent re-typing on re-renders
-                                            // Ideally we'd map this, but effectively just running it once per mounting component works well enough
+                                            setMessages(prev => prev.map((m, i) =>
+                                                i === index ? { ...m, isTyping: false } : m
+                                            ));
                                         }}
                                     />
                                 ) : (
