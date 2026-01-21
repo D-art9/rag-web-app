@@ -7,7 +7,7 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/script
 
 // Debug: Log the URI (masking password) to verify Env Var is loaded
 const maskedURI = MONGODB_URI.replace(/:([^:@]+)@/, ':****@');
-console.log(`[DB] Attempting to connect to: ${maskedURI}`);
+console.log(`\n\n*** DB CONNECTION DEBUG ***\nAttempting to connect to: ${maskedURI}\n***************************\n`);
 
 export const connectDB = async () => {
     try {
