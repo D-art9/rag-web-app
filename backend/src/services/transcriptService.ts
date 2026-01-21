@@ -2,6 +2,77 @@ import fs from 'fs';
 import path from 'path';
 import YtDlpWrap from 'yt-dlp-wrap';
 import { YoutubeTranscript } from 'youtube-transcript';
+import axios from 'axios';
+
+// Helper to cleanup text
+const processTranscript = (items: { text: string }[]) => {
+    const fullText = items.map(item => item.text).join(' ');
+    return fullText
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>');
+};
+
+// Invidious instances to try (public, reliable ones)
+const INVIDIOUS_INSTANCES = [
+    'https://inv.tux.pizza',
+    'https://invidious.drgns.space',
+    'https://vid.ufficio.eu.org',
+    'https://yt.artemislena.eu',
+    'https://invidious.projectsegfau.lt'
+];
+
+async function fetchFromInvidious(videoId: string): Promise<string> {
+    console.log(`[INGEST] Trying Invidious fallback for ${videoId}...`);
+
+    for (const instance of INVIDIOUS_INSTANCES) {
+        try {
+            console.log(`[INGEST] Attempting ${instance}...`);
+            // fetch video details to get caption tracks
+            const infoRes = await axios.get(`${instance}/api/v1/videos/${videoId}`, { timeout: 5000 });
+            const captions = infoRes.data.captions; // array of { label, language, url }
+
+            if (!captions || captions.length === 0) {
+                console.warn(`[INGEST] No captions found on ${instance}`);
+                continue;
+            }
+
+            // Prefer 'English' or 'English (auto-generated)'
+            const englishTrack = captions.find((c: any) => c.label.toLowerCase().includes('english') || c.language === 'en') || captions[0];
+
+            // The URL provided by Invidious API is relative, e.g. "/api/v1/captions/..."
+            const captionUrl = `${instance}${englishTrack.url}`;
+            console.log(`[INGEST] Found caption track: ${englishTrack.label}. Fetching...`);
+
+            const captionRes = await axios.get(captionUrl, { timeout: 5000 });
+            // Invidious returns VTT format usually
+            const vttText = captionRes.data; // This is a VTT string
+
+            // Simple VTT parse
+            const lines = vttText.split('\n');
+            const textLines = lines.filter((line: string) => {
+                const l = line.trim();
+                return l && !l.startsWith('WEBVTT') && !l.startsWith('NOTE') && !l.includes('-->') && !/^\d+$/.test(l);
+            });
+
+            // More rigorous cleanup of tags like <c.color> or <00:00:00>
+            const cleanLines = textLines.map((l: string) => l.replace(/<\/?[^>]+(>|$)/g, ""));
+            // Dedupe
+            const uniqueLines = [...new Set(cleanLines)];
+
+            const result = uniqueLines.join(' ');
+            console.log(`[INGEST] ✓ Successfully fetched from ${instance}`);
+            return result;
+
+        } catch (err: any) {
+            console.warn(`[INGEST] Failed ${instance}: ${err.message}`);
+        }
+    }
+
+    throw new Error('All Invidious fallbacks failed.');
+}
 
 const isWindows = process.platform === 'win32';
 const binaryName = isWindows ? 'yt-dlp.exe' : 'yt-dlp';
@@ -61,30 +132,20 @@ export const transcriptService = {
             console.log(`[INGEST] Fetching transcript for ID: ${videoId}`);
 
             // Use youtube-transcript library
-            const transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
-
-            console.log(`[INGEST] ✓ Transcript fetched via library. Items: ${transcriptItems.length}`);
-
-            // Join text
-            const fullText = transcriptItems.map(item => item.text).join(' ');
-
-            // Clean up text (decode HTML entities like &amp; -> &)
-            const cleanText = fullText
-                .replace(/&amp;/g, '&')
-                .replace(/&quot;/g, '"')
-                .replace(/&#39;/g, "'")
-                .replace(/&lt;/g, '<')
-                .replace(/&gt;/g, '>');
-
-            console.log(`[INGEST] ✓ Text processed, length: ${cleanText.length} chars`);
-
-            return cleanText;
+            try {
+                const transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
+                console.log(`[INGEST] ✓ Transcript fetched via library. Items: ${transcriptItems.length}`);
+                return processTranscript(transcriptItems);
+            } catch (libError: any) {
+                console.warn(`[INGEST] Primary fetch failed: ${libError.message}. Attempting Invidious fallback...`);
+                return await fetchFromInvidious(videoId);
+            }
 
         } catch (error: any) {
             console.error('Transcript Service Error Detail:', error);
 
-            if (error.message.includes('Sign in') || error.message.includes('cookies')) {
-                throw new Error('YouTube is blocking this request (Bot Detection). Please try a different video or try again later.');
+            if (error.message.includes('Sign in') || error.message.includes('cookies') || error.message.includes('Transcript is disabled')) {
+                throw new Error('YouTube is blocking this request (Bot Detection). Tried primary and fallback methods.');
             }
 
             throw new Error('Could not retrieve transcript. ' + (error.message || 'Unknown error'));
