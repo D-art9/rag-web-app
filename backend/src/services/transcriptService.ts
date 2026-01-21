@@ -49,15 +49,7 @@ const ensureBinary = async () => {
 
 // ... existing code ...
 
-        } catch (error: any) {
-    console.error('Transcript Service Error Detail:', error);
-    const errorMessage = error?.message || String(error); // SAEF ACCESS
 
-    if (errorMessage.includes('Sign in') || errorMessage.includes('429') || errorMessage.includes('bot')) {
-        throw new Error('YouTube blocked the request. Please check Proxy/Cookie settings.');
-    }
-    throw new Error('Could not retrieve transcript. ' + errorMessage);
-}
 
 /**
  * Helper to get a WRITABLE path for cookies from Environment Variable.
