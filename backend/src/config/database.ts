@@ -11,12 +11,7 @@ console.log(`\n\n*** DB CONNECTION DEBUG ***\nAttempting to connect to: ${masked
 
 export const connectDB = async () => {
     try {
-        await mongoose.connect(MONGODB_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            useCreateIndex: true,
-            useFindAndModify: false,
-        });
+        await mongoose.connect(MONGODB_URI);
         console.log('MongoDB connected successfully.');
     } catch (error) {
         console.error('Error connecting to MongoDB:', error);
