@@ -59,8 +59,30 @@ app.use('/api/contact', contactRoutes);
 // Error handling middleware
 app.use(errorHandler);
 
+// Global Error Handlers for Stability
+const shutdown = (signal: string) => {
+    console.log(`[SERVER] Received ${signal}. Shutting down gracefully...`);
+    process.exit(0);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
+process.on('uncaughtException', (err) => {
+    console.error('[CRITICAL] Uncaught Exceptions:', err);
+    // Keep running if possible, but logging is crucial
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[CRITICAL] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+
 // Start the server
 app.listen(Number(PORT), '0.0.0.0', () => {
-    console.log(`Server is running on http://0.0.0.0:${PORT}`);
-    console.log(`Ready to accept connections from localhost:${PORT}`);
+    console.log(`=========================================`);
+    console.log(`[SERVER] Running on http://0.0.0.0:${PORT}`);
+    console.log(`[SERVER] Environment: ${process.env.NODE_ENV}`);
+    console.log(`[SERVER] Ready to receive requests`);
+    console.log(`=========================================`);
 });

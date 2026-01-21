@@ -30,9 +30,32 @@ export class VectorDBClient {
         this.loadVectors();
     }
 
-    // ... loadVectors ...
+    /**
+     * Load vectors from disk
+     */
+    private loadVectors() {
+        try {
+            if (fs.existsSync(this.storePath)) {
+                const data = fs.readFileSync(this.storePath, 'utf-8');
+                this.vectors = JSON.parse(data);
+                console.log(`[VECTORDB] Loaded ${this.vectors.length} vectors from disk`);
+            }
+        } catch (error) {
+            console.error('[VECTORDB] Error loading vectors:', error);
+            this.vectors = [];
+        }
+    }
 
-    // ... saveVectors ...
+    /**
+     * Save vectors to disk
+     */
+    private saveVectors() {
+        try {
+            fs.writeFileSync(this.storePath, JSON.stringify(this.vectors, null, 2));
+        } catch (error) {
+            console.error('[VECTORDB] Error saving vectors:', error);
+        }
+    }
 
     /**
      * Initialize the embedding model (Singleton with Race Condition Fix)
@@ -177,7 +200,7 @@ export class VectorDBClient {
         results.sort((a, b) => b.score - a.score);
         const topResults = results.slice(0, topK);
 
-        console.log(`[VECTORDB] ✓ Found ${topResults.length} results (top score: ${topResults[0]?.score.toFixed(3)})`);
+        console.log(`[VECTORDB] ✓ Found ${topResults.length} vectors (top score: ${topResults[0]?.score.toFixed(3)})`);
 
         return topResults;
     }
