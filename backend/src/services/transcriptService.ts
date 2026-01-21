@@ -10,6 +10,7 @@ const getInnertube = async () => {
             cache: new UniversalCache(false),
             generate_session_locally: true,
             // Inject tokens to bypass "FAILED_PRECONDITION" (Bot detection)
+            cookie: process.env.YOUTUBE_COOKIE,
             po_token: process.env.YOUTUBE_PO_TOKEN,
             visitor_data: process.env.YOUTUBE_VISITOR_DATA
         });
