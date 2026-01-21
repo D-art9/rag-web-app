@@ -19,6 +19,7 @@
     "express": "^4.17.1",
     "express-rate-limit": "^8.2.1",
     "mongoose": "^6.10.0",
+    "youtube-transcript": "^1.2.1",
     "yt-dlp-wrap": "^2.3.12"
   },
   "devDependencies": {
