@@ -7,21 +7,7 @@ interface ChatProps {
     videoUrl: string;
     videoId: string;
     onSelectVideo?: (url: string, id: string) => void;
-}
-
-interface Message {
-    text: string;
-    sender: 'user' | 'ai';
-    sources?: string[];
-    isTyping?: boolean; // For typewriter effect state
-}
-
-interface VideoHistoryItem {
-    id: string;
-    url: string;
-    title: string;
-    thumbnail: string;
-    uploadedAt: string;
+    onExportToStudy?: (content: string) => void;
 }
 
 // Typewriter Component
@@ -87,7 +73,7 @@ const CitationList: React.FC<{ sources: string[] }> = ({ sources }) => {
     );
 };
 
-const Chat: React.FC<ChatProps> = ({ videoUrl, videoId, onSelectVideo }) => {
+const Chat: React.FC<ChatProps> = ({ videoUrl, videoId, onSelectVideo, onExportToStudy }) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
@@ -241,6 +227,14 @@ const Chat: React.FC<ChatProps> = ({ videoUrl, videoId, onSelectVideo }) => {
 
                             {msg.sender === 'ai' && msg.sources && msg.sources.length > 0 && (
                                 <CitationList sources={msg.sources} />
+                            )}
+                            {msg.sender === 'ai' && (
+                                <button
+                                    onClick={() => onExportToStudy && onExportToStudy(msg.text)}
+                                    style={styles.exportButton}
+                                >
+                                    🎓 Study This
+                                </button>
                             )}
                         </div>
                     ))}
@@ -508,6 +502,20 @@ const styles: { [key: string]: React.CSSProperties } = {
         background: 'rgba(0,0,0,0.2)',
         borderRadius: '8px',
         border: '1px solid rgba(255,255,255,0.05)'
+    },
+    exportButton: {
+        marginTop: '0.8rem',
+        background: 'rgba(255, 255, 255, 0.1)',
+        border: '1px solid rgba(255,255,255,0.2)',
+        color: 'white',
+        padding: '0.4rem 0.8rem',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontSize: '0.8rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        transition: 'all 0.2s',
     }
 };
 

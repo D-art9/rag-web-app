@@ -3,14 +3,16 @@ import LandingPage from './components/LandingPage';
 import Chat from './components/Chat';
 import Dataflow from './components/Dataflow';
 import ContactPage from './components/ContactPage';
+import StudyChat from './components/StudyChat';
 
-type View = 'landing' | 'chat' | 'dataflow' | 'contact';
+type View = 'landing' | 'chat' | 'dataflow' | 'contact' | 'study';
 
 const App: React.FC = () => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoId, setVideoId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<View>('landing');
   const [isZooming, setIsZooming] = useState(false);
+  const [studyContext, setStudyContext] = useState<string>('');
 
   const handleUrlSubmit = (url: string, id: string) => {
     // 1. Start Zoom Animation
@@ -32,6 +34,11 @@ const App: React.FC = () => {
     }
   };
 
+  const handleExportToStudy = (content: string) => {
+    setStudyContext(content);
+    setCurrentView('study');
+  };
+
   return (
     <div className="app-root">
       {/* Landing Page with Zoom Exit Class */}
@@ -51,7 +58,12 @@ const App: React.FC = () => {
 
       {currentView === 'chat' && videoUrl && (
         <div className="experience-container zoom-in-enter">
-          <Chat videoUrl={videoUrl} videoId={videoId || ''} onSelectVideo={handleUrlSubmit} />
+          <Chat
+            videoUrl={videoUrl}
+            videoId={videoId || ''}
+            onSelectVideo={handleUrlSubmit}
+            onExportToStudy={handleExportToStudy}
+          />
           <button
             onClick={() => {
               setVideoUrl(null);
@@ -63,6 +75,15 @@ const App: React.FC = () => {
           >
             ←
           </button>
+        </div>
+      )}
+
+      {currentView === 'study' && (
+        <div className="experience-container">
+          <StudyChat
+            initialContext={studyContext}
+            onBack={() => setCurrentView('chat')}
+          />
         </div>
       )}
     </div>
