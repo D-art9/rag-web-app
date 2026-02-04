@@ -54,8 +54,11 @@ async def extract_video(request: VideoRequest):
 
     # ... (Keep existing setup) ...
     video_id = request.url.split("v=")[-1].split("&")[0] # Simple ID extract
-    
+    transcript_text = ""
+    metadata = {"title": "YouTube Video", "thumbnail": ""} # Init metadata too for safety
+
     try:
+
         # ATTEMPT 1: Primary Extraction (yt-dlp)
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             try:
