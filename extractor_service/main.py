@@ -48,6 +48,9 @@ async def extract_video(request: VideoRequest):
     transcript_text = ""
     metadata = {"title": "YouTube Video", "thumbnail": ""}
 
+    # ... setup ...
+    errors = []
+
     try:
         # ATTEMPT 1: Primary Extraction (yt-dlp)
         try:
@@ -62,33 +65,23 @@ async def extract_video(request: VideoRequest):
                     "author": info.get('uploader', 'Unknown Author')
                 }
                 
-                # Try to get text from yt-dlp if it worked
                 captions = info.get('automatic_captions') or info.get('subtitles')
                 if captions and 'en' in captions:
-                    # If we are here, yt-dlp worked!
-                    # We could download the VTT url here, but for simplicity
-                    # we will just fall through if we didn't implement the VTT fetcher robustly above.
-                    # Given the "Speed" requirement, if yt-dlp gave us the info, we should use it.
-                    # BUT, to guarantee text, let's just let the robust fallback handle text
-                    # if we didn't implement the VTT parser here in this version.
-                    pass
-
+                    pass 
+                
         except Exception as ytdlp_error:
-            logger.warning(f"yt-dlp partial failure: {str(ytdlp_error)}")
-            # Fallthrough to fallback
+            err_str = str(ytdlp_error)
+            logger.warning(f"yt-dlp partial failure: {err_str}")
+            errors.append(f"yt-dlp: {err_str}")
 
         # ATTEMPT 2: Fallback (youtube_transcript_api)
-        # If we don't have text yet, or if yt-dlp failed entirely
         if not transcript_text:
             logger.info("Falling back to youtube_transcript_api...")
             
             proxy_dict = {"http": proxy, "https": proxy} if proxy else None
             
             try:
-                # Modern API: list_transcripts
                 transcript_list = YouTubeTranscriptApi.list_transcripts(video_id, proxies=proxy_dict)
-                
-                # Find English
                 try:
                     transcript = transcript_list.find_transcript(['en'])
                 except:
@@ -99,16 +92,21 @@ async def extract_video(request: VideoRequest):
                 logger.info(f"Fallback successful. Length: {len(transcript_text)}")
                 
             except Exception as trans_error:
-                logger.error(f"Fallback API also failed: {trans_error}")
+                err_str = str(trans_error)
+                logger.error(f"Fallback API also failed: {err_str}")
+                errors.append(f"Fallback 1: {err_str}")
+                
                 # Last resort: Static method
                 try:
                     t_data = YouTubeTranscriptApi.get_transcript(video_id, proxies=proxy_dict)
                     transcript_text = " ".join([t['text'] for t in t_data])
                 except Exception as e2:
                      logger.error(f"Static fallback failed: {e2}")
+                     errors.append(f"Fallback 2: {str(e2)}")
 
         if not transcript_text:
-             raise Exception("No transcript could be retrieved from any source.")
+             error_summary = " | ".join(errors)
+             raise Exception(f"No transcript found. Errors: {error_summary}")
 
         return {
             "metadata": metadata,
@@ -117,7 +115,8 @@ async def extract_video(request: VideoRequest):
 
     except Exception as e:
         logger.error(f"Extraction failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"All methods failed. Last error: {str(e)}")
+        # Return the DETAILED errors to the user
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
