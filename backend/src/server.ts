@@ -7,6 +7,7 @@ import documentRoutes from './api/routes/documents';
 import searchRoutes from './api/routes/search';
 import videoRoutes from './api/routes/videos';
 import contactRoutes from './api/routes/contact';
+import studyRoutes from './api/routes/study';
 import { errorHandler } from './api/middlewares/errorHandler';
 import { globalLimiter, strictLimiter } from './api/middlewares/rateLimiter';
 import { connectDB } from './config/database';
@@ -55,6 +56,7 @@ app.use('/api/documents', strictLimiter, documentRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/videos', videoRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/study', studyRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

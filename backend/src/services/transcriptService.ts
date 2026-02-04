@@ -66,27 +66,22 @@ export const transcriptService = {
                 '--sub-lang', 'en',
                 '--skip-download',  // Don't download video
                 '--output', path.resolve(__dirname, '../../temp/%(id)s'), // Output to temp
+                '--socket-timeout', '30', // Increase timeout for slow proxies
             ];
 
-            // 1. ADD PROXY (The King)
-            if (process.env.YOUTUBE_PROXY) {
-                console.log('[INGEST] Using Proxy for yt-dlp.');
-                let proxyUrl = process.env.YOUTUBE_PROXY;
-                if (!proxyUrl.startsWith('http')) proxyUrl = `http://${proxyUrl}`;
-                args.push('--proxy', proxyUrl);
-            }
+            // 2. COOKIES are handled by the helper if we passed them?
+            // Actually, let's keep cookie logic mainly here or move it to helper?
+            // To keep helper generic, we passed 'baseArgs'.
+            // The helper adds Proxy.
+            // We should add Cookies to 'baseArgs' BEFORE calling helper.
 
-            // 2. ADD COOKIES (The Queen)
             if (process.env.YOUTUBE_COOKIE) {
-                console.log('[INGEST] Using Cookie for yt-dlp.');
-                // Quote the cookie string to be safe, though exec functions usually handle args array well
                 args.push('--add-header', `Cookie:${process.env.YOUTUBE_COOKIE}`);
                 args.push('--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
             }
 
-            // Execute
-            console.log('[INGEST] Running yt-dlp...');
-            await ytDlpWrap.execPromise(args);
+            // Execute using Helper
+            await executeWithFallback(args, false);
 
             // Find the downloaded VTT file
             // Expected filename format: temp/VIDEOID.en.vtt
@@ -142,23 +137,20 @@ export const transcriptService = {
                 '--no-playlist'
             ];
 
-            // 1. ADD PROXY
-            if (process.env.YOUTUBE_PROXY) {
-                let proxyUrl = process.env.YOUTUBE_PROXY;
-                if (!proxyUrl.startsWith('http')) proxyUrl = `http://${proxyUrl}`;
-                args.push('--proxy', proxyUrl);
-            }
-
             // 2. ADD COOKIES
             if (process.env.YOUTUBE_COOKIE) {
                 args.push('--add-header', `Cookie:${process.env.YOUTUBE_COOKIE}`);
                 args.push('--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
             }
 
-            const output = await ytDlpWrap.execPromise(args);
-            const metadata = JSON.parse(output);
+            // Execute with Robust Fallback
+            await executeWithFallback(args);
 
-            console.log(`[METADATA] ✓ Metadata received. Title: "${metadata.title}"`);
+            console.log(`[METADATA] ✓ Metadata received.`);
+            // Note: Since we use dump-json, we need to capture output.
+            // Refactoring to use executeWithFallbackForOutput for metadata specifically.
+            const output = await executeWithFallback(args, true); // true = return output
+            const metadata = JSON.parse(output);
 
             return {
                 title: metadata.title || 'Untitled Video',
@@ -166,8 +158,6 @@ export const transcriptService = {
             };
         } catch (error: any) {
             console.error('[METADATA] ✗ Failed to fetch metadata:', error.message);
-
-            // Fallback
             return {
                 title: 'YouTube Video',
                 thumbnail: ''
@@ -175,3 +165,58 @@ export const transcriptService = {
         }
     }
 };
+
+/**
+ * Robust Execution Helper with Proxy Fallback
+ * Retries without proxy if the proxy connection times out or fails.
+ */
+async function executeWithFallback(baseArgs: string[], returnOutput: boolean = false): Promise<string> {
+    const hasProxy = !!process.env.YOUTUBE_PROXY;
+    const proxyUrl = process.env.YOUTUBE_PROXY ?
+        (process.env.YOUTUBE_PROXY.startsWith('http') ? process.env.YOUTUBE_PROXY : `http://${process.env.YOUTUBE_PROXY}`)
+        : null;
+
+    // Attempt 1: WITH Proxy (if configured)
+    if (hasProxy && proxyUrl) {
+        try {
+            console.log('[INGEST] Attempt 1: Unlocking with Proxy...');
+            const args = [...baseArgs, '--proxy', proxyUrl];
+            if (returnOutput) {
+                return await ytDlpWrap.execPromise(args);
+            } else {
+                await ytDlpWrap.execPromise(args);
+                return '';
+            }
+        } catch (error: any) {
+            const msg = error?.message || '';
+            // Check for Proxy defaults (Network unreachable, Timeout, etc.)
+            // BUT NOT 'Sign in to confirm' which is a YouTube block.
+            const isProxyChoiceFailure = msg.includes('timed out') || msg.includes('Network is unreachable') || msg.includes('Connection refused');
+
+            if (isProxyChoiceFailure) {
+                console.warn('[INGEST] ⚠️ Proxy failed (Timeout/Network). Falling back to Direct Connection...');
+            } else {
+                // It was a YouTube Block or other fatal error. Throw it.
+                // UNLESS we want to try direct anyway? 
+                // Let's try direct anyway, it might work!
+                console.warn(`[INGEST] ⚠️ Attempt 1 failed (${msg.substring(0, 50)}...). Retrying Direct...`);
+            }
+        }
+    }
+
+    // Attempt 2: DIRECT (No Proxy)
+    // Only reachable if Attempt 1 failed or no proxy was configured.
+    try {
+        console.log('[INGEST] Attempt 2: Direct Connection...');
+        const args = [...baseArgs]; // No proxy arg
+        if (returnOutput) {
+            return await ytDlpWrap.execPromise(args);
+        } else {
+            await ytDlpWrap.execPromise(args);
+            return '';
+        }
+    } catch (error: any) {
+        // Final failure
+        throw error;
+    }
+}
