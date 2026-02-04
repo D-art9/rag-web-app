@@ -4,7 +4,9 @@ import yt_dlp
 import os
 import uvicorn
 import logging
-from youtube_transcript_api import YouTubeTranscriptApi
+# Change import style to be safe
+import youtube_transcript_api
+from youtube_transcript_api import YouTubeTranscriptApi 
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
@@ -40,15 +42,14 @@ async def extract_video(request: VideoRequest):
 
     if proxy:
         ydl_opts['proxy'] = proxy
-
     if cookies:
         ydl_opts['http_headers'] = {'Cookie': cookies}
 
     video_id = request.url.split("v=")[-1].split("&")[0]
+    logger.info(f"Parsed Video ID: {video_id}")
     transcript_text = ""
     metadata = {"title": "YouTube Video", "thumbnail": ""}
-
-    # ... setup ...
+    
     errors = []
 
     try:
@@ -56,7 +57,6 @@ async def extract_video(request: VideoRequest):
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(request.url, download=False)
-                
                 metadata = {
                     "title": info.get('title', 'Unknown Title'),
                     "thumbnail": info.get('thumbnail', ''),
@@ -78,31 +78,60 @@ async def extract_video(request: VideoRequest):
         if not transcript_text:
             logger.info("Falling back to youtube_transcript_api...")
             
+            # DEBUG: Inspect the library
+            try:
+                logger.info(f"Library contents: {dir(youtube_transcript_api)}")
+                logger.info(f"Class contents: {dir(YouTubeTranscriptApi)}")
+            except:
+                pass
+
             proxy_dict = {"http": proxy, "https": proxy} if proxy else None
             
+            # Strategy: Try Modern Static -> Instance List -> Instance Fetch -> Static Legacy
+            
+            # 1. Try Static list_transcripts (Modern)
             try:
                 transcript_list = YouTubeTranscriptApi.list_transcripts(video_id, proxies=proxy_dict)
-                try:
-                    transcript = transcript_list.find_transcript(['en'])
-                except:
-                    transcript = transcript_list.find_generated_transcript(['en'])
-                
+                transcript = transcript_list.find_transcript(['en'])
+                # or transcript = transcript_list.find_generated_transcript(['en'])
                 t_data = transcript.fetch()
                 transcript_text = " ".join([t['text'] for t in t_data])
-                logger.info(f"Fallback successful. Length: {len(transcript_text)}")
+            except Exception as e1:
+                errors.append(f"Static list_transcripts: {e1}")
                 
-            except Exception as trans_error:
-                err_str = str(trans_error)
-                logger.error(f"Fallback API also failed: {err_str}")
-                errors.append(f"Fallback 1: {err_str}")
-                
-                # Last resort: Static method
+                # 2. Try Instance .list() (From User Documentation)
                 try:
-                    t_data = YouTubeTranscriptApi.get_transcript(video_id, proxies=proxy_dict)
+                    ytt = YouTubeTranscriptApi()
+                    # Note: API might require http_client/proxies handling DIFFERENTLY for instance
+                    if hasattr(ytt, 'list'):
+                         transcript_list = ytt.list(video_id) # Doc says list()
+                    else:
+                         transcript_list = ytt.list_transcripts(video_id)
+
+                    try:
+                        transcript = transcript_list.find_transcript(['en'])
+                    except:
+                        transcript = transcript_list.find_generated_transcript(['en'])
+                    
+                    t_data = transcript.fetch()
                     transcript_text = " ".join([t['text'] for t in t_data])
                 except Exception as e2:
-                     logger.error(f"Static fallback failed: {e2}")
-                     errors.append(f"Fallback 2: {str(e2)}")
+                    errors.append(f"Instance .list(): {e2}")
+
+                    # 3. Last Resort: Static get_transcript (Legacy)
+                    try:
+                        t_data = YouTubeTranscriptApi.get_transcript(video_id, proxies=proxy_dict)
+                        transcript_text = " ".join([t['text'] for t in t_data])
+                    except Exception as e3:
+                        errors.append(f"Static get_transcript: {e3}")
+                        
+                        # 4. Instance .fetch() (From provided Doc)
+                        try:
+                             ytt = YouTubeTranscriptApi()
+                             t_data = ytt.fetch(video_id) # NOTE: Doc says fetch(video_id) not with proxies arg directly here
+                             transcript_text = " ".join([t['text'] for t in t_data])
+                        except Exception as e4:
+                             errors.append(f"Instance .fetch(): {e4}")
 
         if not transcript_text:
              error_summary = " | ".join(errors)
@@ -115,7 +144,6 @@ async def extract_video(request: VideoRequest):
 
     except Exception as e:
         logger.error(f"Extraction failed: {str(e)}")
-        # Return the DETAILED errors to the user
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
