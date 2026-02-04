@@ -51,8 +51,6 @@ const ensureBinary = async () => {
 };
 
 
-import axios from 'axios';
-
 export const transcriptService = {
     /**
      * Extracts transcript and metadata by calling the Python Microservice.
@@ -73,7 +71,8 @@ export const transcriptService = {
                 timeout: 120000 // 2 minutes timeout for safety
             });
 
-            const data = response.data;
+            // Fix Type Safety
+            const data = response.data as any;
             if (!data.transcript) {
                 throw new Error("Microservice returned no transcript.");
             }
@@ -99,16 +98,15 @@ export const transcriptService = {
             if (!serviceUrl) throw new Error("EXTRACTOR_SERVICE_URL missing.");
 
             // We call the same endpoint because our Python service returns BOTH.
-            // This is slightly inefficient (double work) but keeps the code clean for now.
-            // Ideally, we should cache the result or have a separate /metadata endpoint.
             const response = await axios.post(`${serviceUrl}/extract`, {
                 url: videoUrl
             });
 
-            const meta = response.data.metadata;
+            // Fix Type Safety
+            const meta = (response.data as any).metadata;
             return {
-                title: meta.title || 'Untitled',
-                thumbnail: meta.thumbnail || ''
+                title: meta?.title || 'Untitled',
+                thumbnail: meta?.thumbnail || ''
             };
         } catch (error: any) {
             console.error('[METADATA] ✗ Failed to fetch metadata:', error.message);
