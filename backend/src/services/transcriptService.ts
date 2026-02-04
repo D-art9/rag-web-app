@@ -51,94 +51,64 @@ const ensureBinary = async () => {
 };
 
 
+import axios from 'axios';
+
 export const transcriptService = {
     /**
-     * Extracts transcript using yt-dlp with PROXY and COOKIE support.
+     * Extracts transcript and metadata by calling the Python Microservice.
      */
     extractTranscript: async (videoUrl: string): Promise<string> => {
         try {
-            console.log(`[INGEST] Starting transcript extraction for: ${videoUrl}`);
-            await ensureBinary();
+            console.log(`[INGEST] Delegating extraction to Microservice for: ${videoUrl}`);
+            const serviceUrl = process.env.EXTRACTOR_SERVICE_URL;
 
-            // Core Argumnets
-            const baseArgs = [
-                videoUrl,
-                '--write-auto-sub',
-                '--sub-lang', 'en',
-                '--skip-download',
-                '--output', path.resolve(__dirname, '../../temp/%(id)s'),
-                '--socket-timeout', '30',
-                // BYPASS OPTIONS
-                '--extractor-args', 'youtube:player_client=android', // <--- MAGIC FIX? (Spoofs Mobile App)
-            ];
-
-            // Execute using Helper (It handles Auth/Proxy)
-            await executeWithFallback(baseArgs, false);
-
-            // Find the downloaded VTT file
-            // Expected filename format: temp/VIDEOID.en.vtt
-            const videoIdMatch = videoUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
-            const videoId = videoIdMatch ? videoIdMatch[1] : '';
-
-            const tempDir = path.resolve(__dirname, '../../temp');
-            // Try explicit filename first
-            const vttPath = path.join(tempDir, `${videoId}.en.vtt`);
-
-            if (!fs.existsSync(vttPath)) {
-                throw new Error('Transcript file not created by yt-dlp (Request might have failed silently or no captions).');
+            if (!serviceUrl) {
+                throw new Error("EXTRACTOR_SERVICE_URL is not defined in environment variables.");
             }
 
-            const vttContent = fs.readFileSync(vttPath, 'utf-8');
-
-            // Cleanup
-            try { fs.unlinkSync(vttPath); } catch (e) { }
-
-            // Parse VTT (Simple)
-            const lines = vttContent.split('\n');
-            const textLines = lines.filter(line => {
-                const l = line.trim();
-                return l && !l.startsWith('WEBVTT') && !l.startsWith('NOTE') && !l.includes('-->') && !/^\d+$/.test(l);
+            // Call Python Service
+            const response = await axios.post(`${serviceUrl}/extract`, {
+                url: videoUrl
+            }, {
+                timeout: 120000 // 2 minutes timeout for safety
             });
-            const uniqueLines = [...new Set(textLines.map(l => l.replace(/<\/?[^>]+(>|$)/g, "")))]; // Dedupe and strip tags
-            const fullText = uniqueLines.join(' ');
 
-            console.log(`[INGEST] ✓ Transcript extracted. Length: ${fullText.length} chars.`);
-            return fullText;
+            const data = response.data;
+            if (!data.transcript) {
+                throw new Error("Microservice returned no transcript.");
+            }
+
+            console.log(`[INGEST] ✓ Microservice returned ${data.transcript.length} chars.`);
+            return data.transcript;
 
         } catch (error: any) {
-            console.error('Transcript Service Error Detail:', error);
-            const errorMessage = error?.message || String(error);
-            if (errorMessage.includes('Sign in') || errorMessage.includes('429') || errorMessage.includes('bot')) {
-                throw new Error('YouTube blocked the request. Please check Proxy/Cookie settings.');
-            }
-            throw new Error('Could not retrieve transcript. ' + errorMessage);
+            console.error('[INGEST] ✗ Microservice Error:', error?.response?.data || error.message);
+            throw new Error(`Extraction Failed: ${error?.response?.data?.detail || error.message}`);
         }
     },
 
     /**
-     * Extracts video metadata using yt-dlp with PROXY support
+     * Extracts metadata via Microservice
+     * (Optimized: In the future, we should combine this with extractTranscript to avoid 2 calls, 
+     * but for now we keep the interface same)
      */
     getVideoMetadata: async (videoUrl: string): Promise<{ title: string; thumbnail: string }> => {
         try {
-            console.log(`[METADATA] Starting metadata fetch for: ${videoUrl}`);
-            await ensureBinary();
+            console.log(`[METADATA] Fetching metadata via Microservice...`);
+            const serviceUrl = process.env.EXTRACTOR_SERVICE_URL;
+            if (!serviceUrl) throw new Error("EXTRACTOR_SERVICE_URL missing.");
 
-            const baseArgs = [
-                videoUrl,
-                '--dump-json',
-                '--no-playlist',
-                // BYPASS OPTIONS
-                '--extractor-args', 'youtube:player_client=android', // <--- MAGIC FIX?
-            ];
+            // We call the same endpoint because our Python service returns BOTH.
+            // This is slightly inefficient (double work) but keeps the code clean for now.
+            // Ideally, we should cache the result or have a separate /metadata endpoint.
+            const response = await axios.post(`${serviceUrl}/extract`, {
+                url: videoUrl
+            });
 
-            const output = await executeWithFallback(baseArgs, true); // true = return output
-            const metadata = JSON.parse(output);
-
-            console.log(`[METADATA] ✓ Metadata received.`);
-
+            const meta = response.data.metadata;
             return {
-                title: metadata.title || 'Untitled Video',
-                thumbnail: metadata.thumbnail || ''
+                title: meta.title || 'Untitled',
+                thumbnail: meta.thumbnail || ''
             };
         } catch (error: any) {
             console.error('[METADATA] ✗ Failed to fetch metadata:', error.message);
@@ -149,54 +119,3 @@ export const transcriptService = {
         }
     }
 };
-
-/**
- * Robust Execution Helper with Proxy Fallback AND Auth Injection
- */
-async function executeWithFallback(baseArgs: string[], returnOutput: boolean = false): Promise<string> {
-    const hasProxy = !!process.env.YOUTUBE_PROXY;
-    const proxyUrl = process.env.YOUTUBE_PROXY ?
-        (process.env.YOUTUBE_PROXY.startsWith('http') ? process.env.YOUTUBE_PROXY : `http://${process.env.YOUTUBE_PROXY}`)
-        : null;
-
-    // Construct Auth Args (Shared for both attempts)
-    const authArgs: string[] = [];
-    if (process.env.YOUTUBE_COOKIE) {
-        authArgs.push('--add-header', `Cookie:${process.env.YOUTUBE_COOKIE}`);
-        // REMOVED USER-AGENT: Let yt-dlp pick the best one for 'android' client
-    }
-
-    // Function to run a specific attempt
-    const runAttempt = async (attemptName: string, extraArgs: string[]) => {
-        try {
-            console.log(`[INGEST] ${attemptName}...`);
-            const finalArgs = [...baseArgs, ...authArgs, ...extraArgs];
-            if (returnOutput) {
-                return await ytDlpWrap.execPromise(finalArgs);
-            } else {
-                await ytDlpWrap.execPromise(finalArgs);
-                return '';
-            }
-        } catch (error: any) {
-            throw error;
-        }
-    };
-
-    // Attempt 1: WITH Proxy
-    if (hasProxy && proxyUrl) {
-        try {
-            return await runAttempt('Attempt 1 (Proxy)', ['--proxy', proxyUrl]);
-        } catch (error: any) {
-            const msg = error?.message || '';
-            console.warn(`[INGEST] ⚠️ Attempt 1 failed. Retrying Direct...`);
-            // Fallthrough to Attempt 2
-        }
-    }
-
-    // Attempt 2: DIRECT (No Proxy)
-    try {
-        return await runAttempt('Attempt 2 (Direct)', []);
-    } catch (error: any) {
-        throw error;
-    }
-}
