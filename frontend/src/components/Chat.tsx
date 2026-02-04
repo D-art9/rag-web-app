@@ -10,6 +10,23 @@ interface ChatProps {
     onExportToStudy?: (content: string) => void;
 }
 
+// ... props
+
+interface Message {
+    text: string;
+    sender: 'user' | 'ai';
+    sources?: string[];
+    isTyping?: boolean;
+}
+
+interface VideoHistoryItem {
+    id: string;
+    url: string;
+    title: string;
+    thumbnail: string;
+    uploadedAt: string;
+}
+
 // Typewriter Component
 const TypewriterMessage: React.FC<{ text: string; onComplete?: () => void }> = ({ text, onComplete }) => {
     const [displayedText, setDisplayedText] = useState('');

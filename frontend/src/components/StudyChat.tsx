@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { generateStudyOutline, sendStudyChat } from '../services/api';
 
 interface StudyChatProps {
     initialContext?: string;
@@ -13,10 +14,22 @@ const StudyChat: React.FC<StudyChatProps> = ({ initialContext, onBack }) => {
     const [chatMessages, setChatMessages] = useState<{ sender: 'user' | 'ai', text: string }[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
+    const handleGenerateOutline = async (context: string) => {
+        setIsLoading(true);
+        try {
+            const data = await generateStudyOutline(context);
+            setOutline(data.outline);
+        } catch (err) {
+            setOutline("## Error\nFailed to generate study guide. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
         // If we have initial context passed from the RAG chat, use it to generating an outline
         if (initialContext) {
-            generateInitialOutline(initialContext);
+            handleGenerateOutline(initialContext);
         } else {
             // Fallback or empty state
             setOutline(`## Welcome to Study Mode
@@ -30,28 +43,29 @@ const StudyChat: React.FC<StudyChatProps> = ({ initialContext, onBack }) => {
         }
     }, [initialContext]);
 
-    const generateInitialOutline = async (context: string) => {
-        setIsLoading(true);
-        // TODO: Call Backend API to generate outline using Gemini
-        // For now, mock it to let frontend dev proceed
-        setTimeout(() => {
-            setOutline(`# Study Outline\n\nBased on your content: "${context.substring(0, 50)}..."\n\n## 1. Key Concepts\n- Concept A\n- Concept B\n\n## 2. Summary\nThis is a placeholder outline generated for UI testing.`);
-            setIsLoading(false);
-        }, 1500);
-    };
-
     const handleSendChat = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!chatInput.trim()) return;
 
-        const newUserMsg = { sender: 'user' as const, text: chatInput };
-        setChatMessages(prev => [...prev, newUserMsg]);
-        setChatInput('');
+        const userText = chatInput;
+        setChatInput(''); // Clear input immediately
 
-        // TODO: Call Backend API for chat
-        setTimeout(() => {
-            setChatMessages(prev => [...prev, { sender: 'ai', text: "I'm a placeholder AI. The backend is not connected yet." }]);
-        }, 1000);
+        // Optimistic update
+        const newUserMsg = { sender: 'user' as const, text: userText };
+        setChatMessages(prev => [...prev, newUserMsg]);
+
+        try {
+            const history = chatMessages.map(m => ({
+                role: m.sender,
+                parts: m.text
+            }));
+
+            const data = await sendStudyChat(history, userText);
+
+            setChatMessages(prev => [...prev, { sender: 'ai', text: data.answer }]);
+        } catch (err) {
+            setChatMessages(prev => [...prev, { sender: 'ai', text: "Sorry, I'm having trouble connecting to the tutor right now." }]);
+        }
     };
 
     return (

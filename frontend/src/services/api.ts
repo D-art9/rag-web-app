@@ -78,3 +78,23 @@ export const fetchVideoHistory = async () => {
         throw error;
     }
 };
+
+export const generateStudyOutline = async (context: string) => {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/study/outline`, { context });
+        return response.data; // Expected { outline: string }
+    } catch (error) {
+        console.error("Error generating outline:", error);
+        throw error;
+    }
+};
+
+export const sendStudyChat = async (history: any[], message: string) => {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/study/chat`, { history, message });
+        return response.data; // Expected { answer: string }
+    } catch (error) {
+        console.error("Error sending study chat:", error);
+        throw error;
+    }
+};
