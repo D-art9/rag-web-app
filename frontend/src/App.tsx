@@ -4,79 +4,74 @@ import Chat from './components/Chat';
 import Dataflow from './components/Dataflow';
 import ContactPage from './components/ContactPage';
 import StudyChat from './components/StudyChat';
+import { Circle, Square, Triangle } from 'lucide-react';
 import './index.css';
 
 type View = 'landing' | 'chat' | 'dataflow' | 'contact' | 'study';
 
 const App: React.FC = () => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [docId, setDocId] = useState<string | null>(null); // Database ID
-  const [ytId, setYtId] = useState<string | null>(null);   // YouTube Thumbnail ID
+  const [docId, setDocId] = useState<string | null>(null);
+  const [ytId, setYtId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<View>('landing');
   const [studyContext, setStudyContext] = useState<string>('');
 
   const handleUrlSubmit = (url: string, id: string) => {
-    // Extract actual YouTube ID for UI/Thumbnails
     let youtubeId = '';
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
-    if (match && match[2].length === 11) {
-        youtubeId = match[2];
-    }
+    if (match && match[2].length === 11) youtubeId = match[2];
 
     setVideoUrl(url);
-    setDocId(id);       // Use this for sendMessage
-    setYtId(youtubeId); // Use this for thumbnail
+    setDocId(id);
+    setYtId(youtubeId);
     setCurrentView('chat');
   };
 
   const navItems = [
-    { id: 'landing', label: '01_HOME', icon: '~' },
-    { id: 'chat', label: '02_DASHBOARD', icon: '>' },
-    { id: 'study', label: '03_STUDY_AI', icon: '?' },
-    { id: 'dataflow', label: '04_STACK', icon: '#' },
-    { id: 'contact', label: '05_SUPPORT', icon: '@' },
+    { id: 'landing', label: '01_START', color: 'var(--primary-red)' },
+    { id: 'chat', label: '02_WORKSPACE', color: 'var(--primary-blue)' },
+    { id: 'study', label: '03_KNOWLEDGE', color: 'var(--primary-yellow)' },
   ];
 
   return (
-    <div className="terminal-root">
-      <div className="crt-overlay" />
-      <nav className="pane nav-pane">
-        <div className="pane-header"><span>MULTIPLEXER_v1.0.0</span><span>[X]</span></div>
-        <div className="shell-logo">
-          <pre style={{ fontSize: '0.4rem', color: 'var(--primary-color)' }}>{`
-   ____ ____ ____ ____ ____ 
-  | S || C || R || Y || P |
-  |____|____|____|____|____|
-  | T || Y || T ||   ||   |
-  |____|____|____|____|____| `}</pre>
-        </div>
-        <div className="shell-menu">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              className={`shell-item ${currentView === item.id ? 'active' : ''}`}
-              onClick={() => setCurrentView(item.id as View)}
-            >
-              <span className="shell-icon">{item.icon}</span>
-              <span className="shell-label">{item.label}</span>
-            </button>
-          ))}
-        </div>
-        <div className="shell-status"><span>CONN: [OK]</span> | <span>USER: devan</span></div>
+    <div className="bauhaus-root">
+      {/* ASYMMETRIC NAVIGATION PANEL */}
+      <nav className="bauhaus-nav bauhaus-border">
+         <div className="brand-logo">
+            <Circle className="logo-shape" fill="var(--primary-red)" color="transparent" size={32} />
+            <Square className="logo-shape" fill="var(--primary-blue)" color="transparent" size={32} />
+            <Triangle className="logo-shape" fill="var(--primary-yellow)" color="transparent" size={32} />
+            <div className="logo-text">SCRIPTYT</div>
+         </div>
+
+         <div className="nav-links">
+           {navItems.map((item) => (
+             <button
+               key={item.id}
+               className={`nav-btn ${currentView === item.id ? 'active' : ''}`}
+               onClick={() => setCurrentView(item.id as View)}
+               style={{ '--accent-color': item.color } as any}
+             >
+               <span className="btn-index">{item.label.split('_')[0]}</span>
+               <span className="btn-label">{item.label.split('_')[1]}</span>
+             </button>
+           ))}
+         </div>
+
+         <div className="nav-footer">
+            <div className="status-badge">SYSTEM_v2.0</div>
+         </div>
       </nav>
 
-      <main className="shell-main">
+      {/* MAIN CONTENT CANVAS */}
+      <main className="bauhaus-viewport">
         {currentView === 'landing' && (
-          <div className="pane view-pane">
-            <div className="pane-header"><span>SCRIPTYT: /root/home</span></div>
-            <LandingPage onUrlSubmit={handleUrlSubmit} onNavigate={(v: any) => setCurrentView(v)} />
-          </div>
+          <LandingPage onUrlSubmit={handleUrlSubmit} onNavigate={(v: any) => setCurrentView(v)} />
         )}
 
         {currentView === 'chat' && (
-          <div className="pane view-pane">
-            <div className="pane-header"><span>SCRIPTYT: /root/dashboard</span></div>
+          <div className="viewport-container">
             {videoUrl ? (
               <Chat
                 videoUrl={videoUrl}
@@ -85,7 +80,11 @@ const App: React.FC = () => {
                 onExportToStudy={(c) => { setStudyContext(c); setCurrentView('study'); }}
               />
             ) : (
-                <div style={{ padding: '2rem' }}><p>NO_SOURCE_FOUND. RETURN TO HOME.</p></div>
+                <div className="empty-bauhaus bauhaus-border">
+                    <h2 className="heading-lg">NO SOURCE LOADED</h2>
+                    <p>PLEASE LOAD A VIDEO SOURCE FROM THE START PANEL.</p>
+                    <button className="btn-bauhaus btn-red" onClick={() => setCurrentView('landing')}>GOTO START</button>
+                </div>
             )}
           </div>
         )}
@@ -96,13 +95,86 @@ const App: React.FC = () => {
       </main>
 
       <style>{`
-        .terminal-root { display: flex; height: 100vh; background: var(--bg-color); padding: 1rem; gap: 1rem; }
-        .nav-pane { width: 220px; flex-shrink: 0; }
-        .shell-menu { flex-grow: 1; padding: 1rem 0; }
-        .shell-item { width: 100%; border: none; background: transparent; color: var(--primary-color); padding: 0.8rem; text-align: left; }
-        .shell-item:hover, .shell-item.active { background: var(--primary-color); color: var(--bg-color); }
-        .shell-main { flex-grow: 1; display: flex; flex-direction: column; }
-        .view-pane { height: 100%; display: flex; flex-direction: column; }
+        .bauhaus-root {
+          display: grid;
+          grid-template-columns: 320px 1fr;
+          height: 100vh;
+          width: 100vw;
+          background: #F0F0F0;
+          overflow: hidden;
+        }
+
+        /* NAVIGATION */
+        .bauhaus-nav {
+          background: white;
+          border-right: 4px solid black;
+          display: flex;
+          flex-direction: column;
+          z-index: 10;
+        }
+
+        .brand-logo {
+          padding: 3rem 2rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          border-bottom: 4px solid black;
+          background: white;
+        }
+        
+        .logo-text { font-weight: 900; font-size: 1.5rem; letter-spacing: -0.05em; margin-left: 0.5rem; }
+
+        .nav-links { flex-grow: 1; padding: 2rem 0; }
+        
+        .nav-btn {
+          width: 100%;
+          border: none;
+          background: transparent;
+          text-align: left;
+          padding: 1.5rem 2rem;
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          transition: all 0.2s;
+          border-bottom: 2px solid transparent;
+        }
+
+        .nav-btn:hover { background: #fdfdfd; padding-left: 2.5rem; }
+        .nav-btn.active {
+          background: var(--accent-color);
+          color: white;
+          border-bottom: 4px solid black;
+        }
+        
+        .btn-index { font-weight: 900; font-size: 0.8rem; margin-bottom: 0.2rem; }
+        .btn-label { font-weight: 900; font-size: 1.5rem; text-transform: uppercase; }
+
+        .nav-footer { padding: 2rem; border-top: 4px solid black; font-weight: 900; font-size: 0.8rem; }
+
+        /* VIEWPORT */
+        .bauhaus-viewport {
+          height: 100%;
+          overflow-y: auto;
+          position: relative;
+        }
+
+        .viewport-container { padding: 3rem; height: 100%; }
+
+        .empty-bauhaus {
+          background: white;
+          padding: 4rem;
+          max-width: 600px;
+          margin: 0 auto;
+          text-align: center;
+          box-shadow: 12px 12px 0px 0px #121212;
+        }
+
+        @media (max-width: 900px) {
+          .bauhaus-root { grid-template-columns: 1fr; }
+          .bauhaus-nav { height: auto; border-bottom: 4px solid black; border-right: none; }
+          .nav-links { display: flex; padding: 0; }
+          .nav-btn { padding: 1rem; align-items: center; }
+        }
       `}</style>
     </div>
   );
