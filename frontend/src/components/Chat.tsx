@@ -1,546 +1,276 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { sendMessage, fetchVideoHistory } from '../services/api';
+import { sendMessage } from '../services/api';
 
 interface ChatProps {
     videoUrl: string;
     videoId: string;
-    onSelectVideo?: (url: string, id: string) => void;
     onExportToStudy?: (content: string) => void;
 }
-
-
 
 interface Message {
     text: string;
     sender: 'user' | 'ai';
     sources?: string[];
-    isTyping?: boolean;
 }
 
-interface VideoHistoryItem {
-    id: string;
-    url: string;
-    title: string;
-    thumbnail: string;
-    uploadedAt: string;
-}
-
-// Typewriter Component
-const TypewriterMessage: React.FC<{ text: string; onComplete?: () => void }> = ({ text, onComplete }) => {
-    const [displayedText, setDisplayedText] = useState('');
-    const indexRef = useRef(0);
-
-    useEffect(() => {
-        indexRef.current = 0;
-        setDisplayedText('');
-
-        const interval = setInterval(() => {
-            if (indexRef.current < text.length) {
-                setDisplayedText((prev) => prev + text.charAt(indexRef.current));
-                indexRef.current++;
-            } else {
-                clearInterval(interval);
-                if (onComplete) onComplete();
-            }
-        }, 15); // Speed of typing
-
-        return () => clearInterval(interval);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [text]);
-
-    return <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayedText}</ReactMarkdown>;
-};
-
-
-
-const CitationList: React.FC<{ sources: string[] }> = ({ sources }) => {
-    const [isOpen, setIsOpen] = useState(false);
-
-    const cleanSource = (source: string) => {
-        // Remove .txt extension
-        let cleaned = source.replace(/\.txt$/, '');
-        // Remove trailing YouTube ID (11 chars) if present (e.g. -abcdef12345)
-        cleaned = cleaned.replace(/-\w{11}$/, '');
-        // Replace underscores with spaces
-        cleaned = cleaned.replace(/_/g, ' ');
-        return cleaned;
-    };
-
-    return (
-        <div style={styles.citationContainer}>
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                style={styles.citationToggle}
-            >
-                {isOpen ? '📚 Hide Sources' : '📚 Show Sources'}
-            </button>
-
-            {isOpen && (
-                <div style={styles.sourcesList} className="fade-in">
-                    {sources.map((source, i) => (
-                        <div key={i} style={styles.sourceItem}>
-                            • {cleanSource(source)}
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-};
-
-const Chat: React.FC<ChatProps> = ({ videoUrl, videoId, onSelectVideo, onExportToStudy }) => {
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [input, setInput] = useState<string>('');
-    const [isLoading, setIsLoading] = useState(true);
-    const [history, setHistory] = useState<VideoHistoryItem[]>([]);
+const Chat: React.FC<ChatProps> = ({ videoUrl, videoId, onExportToStudy }) => {
+    const [messages, setMessages] = useState<Message[]>([
+        { text: "Hello! I've analyzed this video. What would you like to know?", sender: 'ai' }
+    ]);
+    const [input, setInput] = useState('');
+    const [isTyping, setIsTyping] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Fetch history
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
     useEffect(() => {
-        const loadHistory = async () => {
-            try {
-                const videos = await fetchVideoHistory();
-                setHistory(videos);
-            } catch (error) {
-                console.error("Failed to load history", error);
-            }
-        };
-        loadHistory();
-    }, [videoId]);
+        scrollToBottom();
+    }, [messages]);
 
-    // Initial message
-    useEffect(() => {
-        setIsLoading(false);
-        setMessages([
-            { text: `Analysis complete! What would you like to know about this video?`, sender: 'ai' }
-        ]);
-    }, [videoId]);
+    const handleSend = async (e?: React.FormEvent) => {
+        e?.preventDefault();
+        if (!input.trim() || isTyping) return;
 
-    // Auto-scroll
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, input]); // Also scroll on input to keep focus
-
-    const handleSendMessage = async (e?: React.FormEvent, textOverride?: string) => {
-        if (e) e.preventDefault();
-        const textToSend = textOverride || input;
-
-        if (!textToSend.trim()) return;
-
-        // 1. Add User Message
-        const userMsg: Message = { text: textToSend, sender: 'user' };
-        setMessages(prev => [...prev, userMsg]);
+        const userMsg = input;
         setInput('');
-
-        // FIX: Show a visible 'Thinking...' placeholder while awaiting the LLM response
-        const thinkingMsg: Message = { text: '...', sender: 'ai', isTyping: false };
-        setMessages(prev => [...prev, thinkingMsg]);
+        setMessages(prev => [...prev, { text: userMsg, sender: 'user' }]);
+        setIsTyping(true);
 
         try {
-            const response = await sendMessage(textToSend, videoId);
-
-            // Replace the thinking placeholder with the real answer
-            setMessages(prev => [
-                ...prev.slice(0, -1),
-                {
-                    text: response.answer,
-                    sender: 'ai',
-                    sources: response.sources,
-                    isTyping: true
-                }
-            ]);
+            const data = await sendMessage(userMsg, videoId);
+            setMessages(prev => [...prev, { 
+                text: data.answer, 
+                sender: 'ai',
+                sources: data.sources 
+            }]);
         } catch (err) {
-            setMessages(prev => [
-                ...prev.slice(0, -1),
-                {
-                    text: 'Sorry, I encountered an error processing your request. Please try again.',
-                    sender: 'ai'
-                }
-            ]);
+            setMessages(prev => [...prev, { text: "Sorry, I encountered an error responding.", sender: 'ai' }]);
+        } finally {
+            setIsTyping(false);
         }
     };
 
-    const currentVideo = history.find(v => v.id === videoId);
-
-    if (isLoading) {
-        return (
-            <div style={styles.loadingContainer} className="fade-in">
-                <div style={styles.spinner}></div>
-                <p>Analyzing video content...</p>
-            </div>
-        );
-    }
-
     return (
-        <div style={styles.container} className="fade-in">
-            <div style={styles.sidebar} className="custom-scroll">
-                <div style={styles.videoCard}>
-                    {/* Thumbnail */}
-                    {currentVideo && currentVideo.thumbnail ? (
-                        <img src={currentVideo.thumbnail} alt="Video Preview" style={styles.videoPreview} />
-                    ) : (
-                        <div style={styles.videoPreviewPlaceholder}></div>
-                    )}
-                    <p style={styles.videoTitle}>{currentVideo ? currentVideo.title : 'Current Video'}</p>
-                    <p style={styles.videoMeta}>Active Session</p>
+        <div className="dashboard-grid">
+            {/* LEFT COLUMN: VIDEO INSIGHTS */}
+            <aside className="insights-panel glass-panel">
+                <div className="section-header">
+                    <h3>Video Insights</h3>
+                </div>
+                
+                <div className="video-preview glass-card">
+                    <img 
+                        src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`} 
+                        alt="Thumbnail" 
+                        className="thumb"
+                    />
+                    <div className="play-overlay">▶</div>
                 </div>
 
-                <div className="slide-in" style={{ ...styles.infoBox, animationDelay: '0.3s' }}>
-                    <h3>Recent Videos</h3>
-                    <div style={styles.historyList}>
-                        {history.map((video) => (
-                            <div
-                                key={video.id}
-                                style={{
-                                    ...styles.historyItem,
-                                    borderColor: video.id === videoId ? 'var(--accent-color)' : 'transparent',
-                                    background: video.id === videoId ? 'rgba(255,255,255,0.05)' : 'transparent'
-                                }}
-                                onClick={() => onSelectVideo && onSelectVideo(video.url, video.id)}
-                            >
-                                <div style={styles.historyThumbnail}>
-                                    {video.thumbnail ? (
-                                        <img src={video.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    ) : (
-                                        <div style={{ width: '100%', height: '100%', background: '#333' }}></div>
-                                    )}
-                                </div>
-                                <div style={styles.historyInfo}>
-                                    <div style={styles.historyTitle}>{video.title || 'Untitled Video'}</div>
-                                    <div style={styles.historyDate}>{new Date(video.uploadedAt).toLocaleDateString()}</div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                <div className="insights-content">
+                    <div className="insight-badge neon-glow-purple">Key Concepts</div>
+                    <ul className="smart-notes">
+                        <li>• Real-time translation of core topics</li>
+                        <li>• Topic extraction from audio stream</li>
+                        <li>• Semantic indexing of key timestamps</li>
+                        <li>• Cross-referencing with global knowledge</li>
+                    </ul>
+                    <button 
+                        className="export-btn glass-card"
+                        onClick={() => onExportToStudy?.(messages.map(m => m.text).join('\n'))}
+                    >
+                        📥 Export Study Notes
+                    </button>
                 </div>
-            </div>
+            </aside>
 
-            <div style={styles.chatArea}>
-                <div style={styles.messages} className="custom-scroll">
-                    {messages.map((msg, index) => (
-                        <div
-                            key={index}
-                            style={{
-                                ...styles.message,
-                                alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                                backgroundColor: msg.sender === 'user' ? 'var(--accent-color)' : 'var(--surface-color)',
-                                color: msg.sender === 'user' ? 'white' : 'var(--text-primary)',
-                            }}
-                            className={msg.sender === 'user' ? "slide-in-right" : "slide-in-left"}
-                        >
-                            <div className="markdown-content">
-                                {msg.sender === 'ai' && msg.isTyping ? (
-                                    <TypewriterMessage
-                                        text={msg.text}
-                                        onComplete={() => {
-                                            setMessages(prev => prev.map((m, i) =>
-                                                i === index ? { ...m, isTyping: false } : m
-                                            ));
-                                        }}
-                                    />
-                                ) : (
-                                    msg.sender === 'ai' ?
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown> :
-                                        msg.text
+            {/* RIGHT COLUMN: CHAT INTERFACE */}
+            <main className="chat-interface glass-panel">
+                <div className="section-header">
+                    <h3>AI Study Assistant</h3>
+                </div>
+
+                <div className="messages-flow">
+                    {messages.map((msg, i) => (
+                        <div key={i} className={`message-wrapper ${msg.sender}`}>
+                            <div className="avatar-small">{msg.sender === 'ai' ? '🧠' : '👤'}</div>
+                            <div className={`bubble glass-card ${msg.sender === 'user' ? 'neon-glow-cyan' : 'neon-glow-purple'}`}>
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                                {msg.sources && msg.sources.length > 0 && (
+                                    <div className="sources-tag">📚 {msg.sources.length} Sources</div>
                                 )}
                             </div>
-
-                            {msg.sender === 'ai' && msg.sources && msg.sources.length > 0 && (
-                                <CitationList sources={msg.sources} />
-                            )}
-                            {msg.sender === 'ai' && (
-                                <button
-                                    onClick={() => onExportToStudy && onExportToStudy(msg.text)}
-                                    style={styles.exportButton}
-                                >
-                                    🎓 Study This
-                                </button>
-                            )}
                         </div>
                     ))}
+                    {isTyping && (
+                        <div className="message-wrapper ai">
+                            <div className="bubble typing-dots">...</div>
+                        </div>
+                    )}
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input area remains same */}
-                <div style={styles.inputWrapper}>
-                    {/* Suggested Chips */}
-                    <div style={styles.chipsContainer}>
-                        <button onClick={() => handleSendMessage(undefined, "Summarize this video")} style={styles.chip}>Summarize this</button>
-                        <button onClick={() => handleSendMessage(undefined, "What are the key technical takeaways?")} style={styles.chip}>Key Takeaways</button>
-                        <button onClick={() => handleSendMessage(undefined, "Who is the speaker?")} style={styles.chip}>Who is speaking?</button>
-                    </div>
-
-                    <form onSubmit={(e) => handleSendMessage(e)} style={styles.inputForm}>
-                        <input
-                            type="text"
+                <form onSubmit={handleSend} className="chat-input-area">
+                    <div className="input-box glass-card">
+                        <input 
+                            type="text" 
+                            placeholder="Ask a question about the video..." 
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder="Ask anything about the video..."
-                            style={styles.input}
                         />
-                        <button type="submit" style={styles.sendButton}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                            </svg>
-                        </button>
-                    </form>
-                </div>
-            </div>
+                        <button type="submit" className="send-btn">Send 🚀</button>
+                    </div>
+                </form>
+            </main>
+
+            <style>{`
+                .dashboard-grid {
+                    display: grid;
+                    grid-template-columns: 350px 1fr;
+                    gap: 1.5rem;
+                    height: calc(100vh - 4rem);
+                }
+
+                .section-header {
+                    margin-bottom: 2rem;
+                    padding-bottom: 1rem;
+                    border-bottom: 1px solid var(--glass-border);
+                }
+
+                .insights-panel, .chat-interface {
+                    padding: 2rem;
+                    border-radius: var(--radius-lg);
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .video-preview {
+                    width: 100%;
+                    aspect-ratio: 16/9;
+                    overflow: hidden;
+                    position: relative;
+                    margin-bottom: 2rem;
+                }
+
+                .video-preview .thumb {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                }
+
+                .play-overlay {
+                    position: absolute;
+                    inset: 0;
+                    background: rgba(0,0,0,0.4);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 2rem;
+                }
+
+                .insight-badge {
+                    display: inline-block;
+                    padding: 0.4rem 1rem;
+                    background: var(--accent-secondary);
+                    color: #fff;
+                    border-radius: 100px;
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                    margin-bottom: 1.5rem;
+                }
+
+                .smart-notes {
+                    list-style: none;
+                    color: var(--text-secondary);
+                    font-size: 0.9rem;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1rem;
+                    margin-bottom: 2.5rem;
+                }
+
+                .export-btn {
+                    width: 100%;
+                    padding: 1rem;
+                    background: rgba(255,255,255,0.05);
+                    border: 1px solid var(--glass-border);
+                    color: #fff;
+                    cursor: pointer;
+                    font-weight: 600;
+                }
+
+                /* CHAT STYLES */
+                .messages-flow {
+                    flex-grow: 1;
+                    overflow-y: auto;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1.5rem;
+                    padding-right: 1rem;
+                    margin-bottom: 1.5rem;
+                }
+
+                .message-wrapper {
+                    display: flex;
+                    gap: 1rem;
+                    max-width: 80%;
+                }
+
+                .message-wrapper.user {
+                    flex-direction: row-reverse;
+                    align-self: flex-end;
+                }
+
+                .bubble {
+                    padding: 1rem 1.5rem;
+                }
+
+                .user .bubble {
+                    background: rgba(0, 247, 255, 0.05);
+                    border-color: rgba(0, 247, 255, 0.2);
+                }
+
+                .ai .bubble {
+                    background: rgba(168, 85, 247, 0.05);
+                    border-color: rgba(168, 85, 247, 0.2);
+                }
+
+                .input-box {
+                    display: flex;
+                    padding: 0.5rem;
+                    gap: 1rem;
+                }
+
+                .input-box input {
+                    flex-grow: 1;
+                    background: transparent;
+                    border: none;
+                    color: #fff;
+                    padding: 0.8rem;
+                    outline: none;
+                }
+
+                .send-btn {
+                    background: var(--accent-primary);
+                    border: none;
+                    padding: 0.8rem 1.5rem;
+                    border-radius: 12px;
+                    font-weight: 700;
+                    cursor: pointer;
+                }
+
+                .sources-tag {
+                    margin-top: 0.5rem;
+                    font-size: 0.7rem;
+                    color: var(--text-secondary);
+                }
+            `}</style>
         </div>
     );
 };
-
-const styles: { [key: string]: React.CSSProperties } = {
-    container: {
-        display: 'grid',
-        gridTemplateColumns: '320px 1fr',
-        height: '100vh',
-        maxWidth: '1600px',
-        margin: '0 auto',
-        overflow: 'hidden',
-    },
-    sidebar: {
-        padding: '2rem',
-        borderRight: '1px solid var(--border-color)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '2rem',
-        background: 'rgba(255, 255, 255, 0.02)',
-        overflowY: 'auto',
-    },
-    videoCard: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.5rem',
-    },
-    videoPreview: {
-        width: '100%',
-        aspectRatio: '16/9',
-        backgroundColor: 'var(--surface-color)',
-        borderRadius: '8px',
-        border: '1px solid var(--border-color)',
-        objectFit: 'cover',
-    },
-    videoPreviewPlaceholder: {
-        width: '100%',
-        aspectRatio: '16/9',
-        backgroundColor: 'var(--surface-color)',
-        borderRadius: '8px',
-        border: '1px solid var(--border-color)',
-    },
-    videoTitle: {
-        fontWeight: 600,
-        fontSize: '1rem',
-        marginTop: '0.5rem',
-        lineHeight: 1.3,
-    },
-    videoMeta: {
-        color: 'var(--text-secondary)',
-        fontSize: '0.8rem',
-    },
-    infoBox: {
-        background: 'var(--surface-color)',
-        padding: '1.2rem',
-        borderRadius: '12px',
-        border: '1px solid var(--border-color)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem',
-        flex: 1,
-    },
-    historyList: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.5rem',
-        overflowY: 'auto',
-    },
-    historyItem: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.75rem',
-        padding: '0.5rem',
-        borderRadius: '8px',
-        cursor: 'pointer',
-        border: '1px solid transparent',
-        transition: 'all 0.2s',
-    },
-    historyThumbnail: {
-        width: '48px',
-        height: '36px',
-        borderRadius: '4px',
-        overflow: 'hidden',
-        flexShrink: 0,
-    },
-    historyInfo: {
-        flex: 1,
-        overflow: 'hidden',
-    },
-    historyTitle: {
-        fontSize: '0.85rem',
-        fontWeight: 500,
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-    },
-    historyDate: {
-        fontSize: '0.7rem',
-        color: 'var(--text-secondary)',
-        marginBottom: 0,
-    },
-    chatArea: {
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        position: 'relative',
-        overflow: 'hidden',
-    },
-    messages: {
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem',
-        overflowY: 'auto',
-        padding: '2rem',
-        paddingBottom: '1rem',
-        minHeight: 0,
-    },
-    message: {
-        maxWidth: '75%', // Increased for better markdown reading
-        padding: '1rem 1.5rem',
-        borderRadius: '18px',
-        fontSize: '0.95rem',
-        lineHeight: 1.6,
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    },
-    inputWrapper: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.5rem',
-        background: 'var(--bg-color)',
-        padding: '1rem 2rem 2rem 2rem',
-        borderTop: '1px solid var(--border-color)',
-        flexShrink: 0,
-    },
-    chipsContainer: {
-        display: 'flex',
-        gap: '0.5rem',
-        overflowX: 'auto',
-        paddingBottom: '0.5rem',
-    },
-    chip: {
-        background: 'var(--surface-color)',
-        border: '1px solid var(--border-color)',
-        color: 'var(--text-secondary)',
-        padding: '0.4rem 1rem',
-        borderRadius: '100px',
-        fontSize: '0.8rem',
-        cursor: 'pointer',
-        whiteSpace: 'nowrap',
-        transition: 'all 0.2s',
-    },
-    inputForm: {
-        display: 'flex',
-        gap: '0.75rem',
-    },
-    input: {
-        flex: 1,
-        borderRadius: '100px',
-        padding: '1rem 1.5rem',
-        fontSize: '1rem',
-        background: 'var(--surface-color)',
-        border: '1px solid var(--border-color)',
-        color: 'white',
-        outline: 'none',
-    },
-    sendButton: {
-        width: '50px',
-        height: '50px',
-        borderRadius: '50%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 0,
-        background: 'var(--accent-color)',
-        border: 'none',
-        cursor: 'pointer',
-        transition: 'transform 0.1s',
-    },
-    loadingContainer: {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        gap: '1.5rem',
-        color: 'var(--text-secondary)',
-    },
-    spinner: {
-        width: '40px',
-        height: '40px',
-        border: '3px solid var(--surface-color)',
-        borderTopColor: 'var(--accent-color)',
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite',
-    },
-    sources: {
-        marginTop: '1rem',
-        paddingTop: '0.75rem',
-        borderTop: '1px solid rgba(255,255,255,0.1)',
-        fontSize: '0.75rem',
-        color: 'var(--text-secondary)',
-    },
-    sourcesLabel: {
-        fontWeight: 600,
-        marginBottom: '0.25rem',
-        textTransform: 'uppercase',
-        letterSpacing: '0.5px',
-    },
-    sourceItem: {
-        opacity: 0.8,
-        fontStyle: 'italic',
-        lineHeight: 1.4,
-        marginBottom: '0.25rem',
-        fontSize: '0.85rem'
-    },
-    citationContainer: {
-        marginTop: '0.8rem',
-    },
-    citationToggle: {
-        background: 'transparent',
-        border: '1px solid rgba(255,255,255,0.2)',
-        color: 'var(--text-secondary)',
-        padding: '0.3rem 0.8rem',
-        borderRadius: '100px',
-        fontSize: '0.75rem',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        display: 'inline-block'
-    },
-    sourcesList: {
-        marginTop: '0.8rem',
-        padding: '0.8rem',
-        background: 'rgba(0,0,0,0.2)',
-        borderRadius: '8px',
-        border: '1px solid rgba(255,255,255,0.05)'
-    },
-    exportButton: {
-        marginTop: '0.8rem',
-        background: 'rgba(255, 255, 255, 0.1)',
-        border: '1px solid rgba(255,255,255,0.2)',
-        color: 'white',
-        padding: '0.4rem 0.8rem',
-        borderRadius: '8px',
-        cursor: 'pointer',
-        fontSize: '0.8rem',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        transition: 'all 0.2s',
-    }
-};
-
-// All styles have been moved to index.css — no more inline injection.
 
 export default Chat;
