@@ -37,16 +37,13 @@ def parse_video_id(url: str) -> str:
 
 
 def get_random_proxy() -> str:
-    """
-    FIX: Picks a random proxy from YOUTUBE_PROXIES (comma-separated list).
-    Falls back to YOUTUBE_PROXY if plural is not set.
-    """
+    """Rotates through the YOUTUBE_PROXIES pool."""
     proxies_env = os.getenv("YOUTUBE_PROXIES", "")
     if proxies_env:
         proxy_list = [p.strip() for p in proxies_env.split(",") if p.strip()]
         if proxy_list:
             chosen = random.choice(proxy_list)
-            logger.info(f"Using rotated proxy: {chosen.split('@')[-1]}") # Log host:port only for privacy
+            logger.info(f"Using rotated proxy: {chosen.split('@')[-1]}")
             return chosen
     
     single_proxy = os.getenv("YOUTUBE_PROXY")
@@ -60,27 +57,29 @@ def get_random_proxy() -> str:
 async def extract_video(request: VideoRequest):
     logger.info(f"Received extraction request for: {request.url}")
 
-    video_id = parse_video_id(request.url)
-    proxy = get_random_proxy()
-    cookies = os.getenv("YOUTUBE_COOKIE")
-
-    ydl_opts = {
-        'quiet': True,
-        'no_warnings': True,
-        'skip_download': True,
-        'extractor_args': {'youtube': {'player_client': ['android']}},
-    }
-
-    if proxy:
-        ydl_opts['proxy'] = proxy
-    if cookies:
-        ydl_opts['http_headers'] = {'Cookie': cookies}
-
-    transcript_text = ""
-    metadata = {"title": "YouTube Video", "thumbnail": ""}
-    errors = []
-
     try:
+        video_id = parse_video_id(request.url)
+        proxy = get_random_proxy()
+        cookies = os.getenv("YOUTUBE_COOKIE")
+
+        # Set up yt-dlp options
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'skip_download': True,
+            'extractor_args': {'youtube': {'player_client': ['android']}},
+            'youtube_include_dash_manifest': False,
+        }
+
+        if proxy:
+            ydl_opts['proxy'] = proxy
+        if cookies:
+            ydl_opts['http_headers'] = {'Cookie': cookies}
+
+        transcript_text = ""
+        metadata = {"title": "YouTube Video", "thumbnail": ""}
+        errors = []
+
         # ATTEMPT 1: Get metadata via yt-dlp
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -91,7 +90,7 @@ async def extract_video(request: VideoRequest):
                     "duration": info.get('duration', 0),
                     "uploader": info.get('uploader', 'Unknown Author')
                 }
-                logger.info(f"yt-dlp metadata OK")
+                logger.info("yt-dlp metadata OK")
         except Exception as ytdlp_error:
             errors.append(f"yt-dlp: {str(ytdlp_error)}")
 
@@ -99,23 +98,28 @@ async def extract_video(request: VideoRequest):
         proxy_dict = {"http": proxy, "https": proxy} if proxy else None
         
         try:
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id, proxies=proxy_dict)
-            try:
-                transcript = transcript_list.find_transcript(['en'])
-            except:
-                transcript = transcript_list.find_generated_transcript(['en'])
-            
-            t_data = transcript.fetch()
+            # First try the official static method (works for most public videos)
+            t_data = YouTubeTranscriptApi.get_transcript(video_id, proxies=proxy_dict)
             transcript_text = " ".join([t['text'] for t in t_data])
-            logger.info(f"Transcript fetched OK ({len(transcript_text)} chars)")
-        except Exception as e:
-            errors.append(f"transcript_api: {str(e)}")
+            logger.info(f"Transcript fetched OK via get_transcript")
+        except Exception as e1:
+            errors.append(f"get_transcript: {str(e1)}")
+            
+            # Fallback to list_transcripts (better for auto-generated/multilingual)
+            try:
+                transcript_list = YouTubeTranscriptApi.list_transcripts(video_id, proxies=proxy_dict)
+                transcript = transcript_list.find_transcript(['en'])
+                t_data = transcript.fetch()
+                transcript_text = " ".join([t['text'] for t in t_data])
+                logger.info(f"Transcript fetched OK via list_transcripts")
+            except Exception as e2:
+                errors.append(f"list_transcripts: {str(e2)}")
 
         if not transcript_text:
             error_summary = " | ".join(errors)
-            # Check for YouTube rate limits specifically
-            if "Too Many Requests" in error_summary or "429" in error_summary:
-                raise HTTPException(status_code=429, detail="YouTube is rate-limiting this request (429).")
+            # Custom status for bot detection / rate limit
+            if "Too Many Requests" in error_summary or "429" in error_summary or "Sign in" in error_summary:
+                raise HTTPException(status_code=429, detail="Sign-in required / Bot detected. Check Cookie and Proxy.")
             raise Exception(f"No transcript found. Errors: {error_summary}")
 
         return {"metadata": metadata, "transcript": transcript_text}
