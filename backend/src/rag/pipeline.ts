@@ -24,7 +24,6 @@ export const ragPipeline = {
             console.log(`[RAG] Top chunks for: "${question}" (Top score: ${topScore.toFixed(3)})`);
 
             // 2. Build the augmented prompt
-            // Separating Visual Context from Audio Segments
             const contextText = chunks
                 .map((c, i) => {
                     if (c.content.includes('[VISUAL_CONTEXT_METADATA]')) {
@@ -35,8 +34,8 @@ export const ragPipeline = {
                 .join('\n\n');
 
             const augmentedPrompt = `
-SYSTEM ROLE: You are an expert Multimodal Video Content Analyst.
-TASK: Analyze the provided segments (Visual Metadata & Audio Transcript) and answer accurately.
+SYSTEM ROLE: You are a high-fidelity Multimodal Video Content Analyst.
+Your output must be professional, structured, and formatted for a Terminal CLI interface using Markdown.
 
 CONTEXT DATA FROM VIDEO:
 ---------------------
@@ -44,19 +43,21 @@ ${contextText}
 ---------------------
 
 INSTRUCTIONS & CONSTRAINTS:
-1. [VISUAL_METADATA]: This is what is SEEN on the screen/thumbnail (branding, text overlays, appearance).
-2. [AUDIO_SEGMENT]: This is what is SAID (transcript). Use logic to handle messy transcripts.
-3. If the user asks about visual details (e.g., 'What was the thumbnail?', 'What is he wearing?'), use the VISUAL_METADATA.
-4. If asked to summarize, synthesize BOTH what is heard and what is seen.
-5. If the answer is absolutely not present, state: "Source data is insufficient for this specific query."
-6. Do NOT fabricate or use prior knowledge.
+1. USE MARKDOWN: Use headers (###), bold (**), and lists (-) for deep structure.
+2. CATEGORIZE: If the data allows, separate your answer into logical sections:
+   - ### 🔍 EXECUTIVE SUMMARY
+   - ### 📊 KEY_INSIGHTS
+   - ### 👁️ VISUAL_ANALYSIS (If visual metadata is relevant)
+3. BE CONCISE: Avoid generic greetings. Dive straight into the data.
+4. If asked to summarize, use a bulleted list for maximum readability.
+5. If the answer is absolutely not present, state: "SOURCE_ERROR: Data insufficient for current query."
 
-USER QUESTION: ${question}
+USER QUERY: ${question}
 
-DETAILED RESPONSE:`;
+SYSTEM_REPORT_v2.1:`;
 
             // 3. Generate the answer
-            console.log(`[RAG] Generating answer via GROQ/LLM...`);
+            console.log(`[RAG] Generating structured answer...`);
             const answer = await generator.generate(augmentedPrompt);
 
             // 4. Extract sources (deduplicated)
@@ -79,7 +80,7 @@ DETAILED RESPONSE:`;
         } catch (error) {
             console.error('RAG Pipeline Error:', error);
             return {
-                answer: "System Error: The AI pipeline encountered a processing fault. Target video source might be unreachable.",
+                answer: "### ✗ SYSTEM_FAULT\nThe AI pipeline encountered a processing fault. Target video source might be unreachable.",
                 sources: []
             };
         }
