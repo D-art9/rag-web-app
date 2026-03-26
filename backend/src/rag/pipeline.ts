@@ -24,25 +24,32 @@ export const ragPipeline = {
             console.log(`[RAG] Top chunks for: "${question}" (Top score: ${topScore.toFixed(3)})`);
 
             // 2. Build the augmented prompt
-            // We format the segments clearly so the AI can distinguish between them
+            // Separating Visual Context from Audio Segments
             const contextText = chunks
-                .map((c, i) => `--- [VIDEO_SEGMENT_${i+1}] ---\n${c.content}`)
+                .map((c, i) => {
+                    if (c.content.includes('[VISUAL_CONTEXT_METADATA]')) {
+                        return `--- [VISUAL_METADATA] ---\n${c.content}`;
+                    }
+                    return `--- [AUDIO_SEGMENT_${i+1}] ---\n${c.content}`;
+                })
                 .join('\n\n');
 
             const augmentedPrompt = `
-SYSTEM ROLE: You are an expert Video Content Analyst.
-TASK: Analyze the provided transcript segments and answer the user's question accurately.
+SYSTEM ROLE: You are an expert Multimodal Video Content Analyst.
+TASK: Analyze the provided segments (Visual Metadata & Audio Transcript) and answer accurately.
 
 CONTEXT DATA FROM VIDEO:
 ---------------------
 ${contextText}
 ---------------------
 
-INSTRUCTIONS:
-1. Use ONLY the data above. No prior knowledge.
-2. The transcript may be messy or unpunctuated. Use logic to reconstruct the speaker's intent.
-3. If asked to "summarize" or "analyse", give a structured breakdown of the most informative segments.
-4. If the context is completely irrelevant to the question, state: "Source data is insufficient for this specific query."
+INSTRUCTIONS & CONSTRAINTS:
+1. [VISUAL_METADATA]: This is what is SEEN on the screen/thumbnail (branding, text overlays, appearance).
+2. [AUDIO_SEGMENT]: This is what is SAID (transcript). Use logic to handle messy transcripts.
+3. If the user asks about visual details (e.g., 'What was the thumbnail?', 'What is he wearing?'), use the VISUAL_METADATA.
+4. If asked to summarize, synthesize BOTH what is heard and what is seen.
+5. If the answer is absolutely not present, state: "Source data is insufficient for this specific query."
+6. Do NOT fabricate or use prior knowledge.
 
 USER QUESTION: ${question}
 

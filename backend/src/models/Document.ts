@@ -5,6 +5,7 @@ export interface IDocument extends Document {
     title: string;
     thumbnail: string;
     transcript: string;
+    visualDescription?: string;
     createdAt: Date;
 }
 
@@ -13,6 +14,7 @@ const DocumentSchema: Schema = new Schema({
     title: { type: String, required: true },
     thumbnail: { type: String, default: '' },
     transcript: { type: String, required: true },
+    visualDescription: { type: String, default: '' },
     createdAt: { type: Date, default: Date.now },
 });
 

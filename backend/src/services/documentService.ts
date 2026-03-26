@@ -74,20 +74,34 @@ class DocumentService {
             // FIX: Single call to microservice instead of two parallel calls
             const { transcript, title, thumbnail } = await transcriptService.extractAll(url);
 
-            console.log(`[DOCUMENT_SERVICE] ✓ Transcript and metadata received`);
-            console.log(`[DOCUMENT_SERVICE] Transcript length: ${transcript.length} chars`);
-            console.log(`[DOCUMENT_SERVICE] Metadata title: "${title}"`);
+            // 1. New: Visual Intelligence Analysis
+            // This runs in the background but we wait for it to enrich the vector DB
+            let visualDescription = '';
+            const { visionService } = await import('./visionService');
+            try {
+                visualDescription = await visionService.analyzeThumbnail(thumbnail);
+            } catch (err) {
+                console.warn('[DOCUMENT_SERVICE] ✗ Vision Analysis failed, continuing with transcript only.');
+            }
+
+            console.log(`[DOCUMENT_SERVICE] ✓ Transcript received. Enrichment: Visual context available (${visualDescription.length} chars)`);
             console.log(`[DOCUMENT_SERVICE] Saving to MongoDB...`);
 
-            // Save to MongoDB
-            const savedDoc = await DocumentModel.create({ url, title, thumbnail, transcript });
+            // Save to MongoDB (Adding the visual context as metadata)
+            const savedDoc = await DocumentModel.create({ url, title, thumbnail, transcript, visualDescription });
 
             console.log(`[STORAGE] ✓ Document ${savedDoc._id} saved to MongoDB.`);
 
             // Generate and store embeddings in vector DB
-            console.log(`[DOCUMENT_SERVICE] Chunking transcript for embeddings...`);
+            console.log(`[DOCUMENT_SERVICE] Chunking transcript and visual context...`);
             const chunks = chunkTranscript(transcript);
-            console.log(`[DOCUMENT_SERVICE] Created ${chunks.length} chunks`);
+            
+            // 2. Prepend visual context as a high-density "Super Chunk" at index 0
+            if (visualDescription) {
+                chunks.unshift({ text: `[VISUAL_CONTEXT_METADATA]: This video has a thumbnail with the following visual details: ${visualDescription}. This context covers branding, facial expressions, and text overlays seen on screen.`, index: -1 });
+            }
+
+            console.log(`[DOCUMENT_SERVICE] Finalizing ${chunks.length} total knowledge chunks`);
 
             const vectorDB = getVectorDBClient();
             await vectorDB.storeVideoEmbeddings(
@@ -96,7 +110,7 @@ class DocumentService {
                 { title, url: savedDoc.url, thumbnail }
             );
 
-            console.log(`[DOCUMENT_SERVICE] ✓ Upload complete!`);
+            console.log(`[DOCUMENT_SERVICE] ✓ Multimodal upload complete!`);
 
             return {
                 id: savedDoc._id.toString(),
