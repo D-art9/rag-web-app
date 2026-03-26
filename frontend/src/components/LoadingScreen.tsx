@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from 'react';
 
 interface LoadingScreenProps {
-    isFinished: boolean;
-    onAnimationComplete: () => void;
+    isFinished?: boolean;
+    onAnimationComplete?: () => void;
+    message?: string;
 }
 
 const STEPS = [
     { text: "Initializing connection...", threshold: 10 },
     { text: "Resolving YouTube URL...", threshold: 20 },
-    { text: "Connecting to extractor service...", threshold: 35 },
+    { text: "Connecting to extractor...", threshold: 35 },
     { text: "Extracting transcript...", threshold: 50 },
-    { text: "Parsing transcript data...", threshold: 65 },
-    { text: "Generating vector embeddings...", threshold: 80 },
-    { text: "Indexing knowledge base...", threshold: 90 },
-    { text: "Finalizing pipeline...", threshold: 95 }
+    { text: "Parsing segments...", threshold: 65 },
+    { text: "Generating embeddings...", threshold: 80 },
+    { text: "Indexing knowledge...", threshold: 90 },
+    { text: "Finalizing...", threshold: 95 }
 ];
 
-
-const LoadingScreen: React.FC<LoadingScreenProps> = ({ isFinished, onAnimationComplete }) => {
+const LoadingScreen: React.FC<LoadingScreenProps> = ({ isFinished, onAnimationComplete, message }) => {
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState(0);
 
@@ -28,8 +28,8 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ isFinished, onAnimationCo
             // Fast forward to 100%
             setProgress(100);
             setTimeout(() => {
-                onAnimationComplete();
-            }, 800); // Wait a bit at 100% before navigating
+                if (onAnimationComplete) onAnimationComplete();
+            }, 800);
         } else {
             // Simulated progress up to 90%
             interval = setInterval(() => {
@@ -60,7 +60,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ isFinished, onAnimationCo
                     <div style={styles.logo}>⚡</div>
                 </div>
 
-                <h2 style={styles.title}>Processing Content</h2>
+                <h2 style={styles.title}>{message || (isFinished ? "Complete!" : "Processing Content")}</h2>
 
                 <div style={styles.barContainer}>
                     <div style={{ ...styles.barFill, width: `${progress}%` }}></div>
@@ -95,9 +95,9 @@ const styles: { [key: string]: React.CSSProperties } = {
         left: 0,
         width: '100vw',
         height: '100vh',
-        background: 'rgba(5, 10, 20, 0.95)',
-        backdropFilter: 'blur(15px)',
-        zIndex: 2000,
+        background: 'rgba(11, 14, 20, 0.9)',
+        backdropFilter: 'blur(30px)',
+        zIndex: 10000,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
