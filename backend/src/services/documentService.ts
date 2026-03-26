@@ -114,7 +114,7 @@ class DocumentService {
             console.log(`[SEARCH] Performing vector search for: "${query}"${videoId ? ` (videoId: ${videoId})` : ' (ALL videos)'}`);
 
             const vectorDB = getVectorDBClient();
-            const results = await vectorDB.search(query, videoId, 5);
+            const results = await vectorDB.search(query, videoId, 10);
 
             console.log(`[SEARCH] ✓ Vector search returned ${results.length} results`);
             return results;

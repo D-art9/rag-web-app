@@ -9,65 +9,72 @@ import { RAGResponse } from '../types/index';
 export const ragPipeline = {
     process: async (question: string, contextId?: string): Promise<RAGResponse> => {
         try {
-            // 1. Retrieve relevant chunks
+            // 1. Retrieve relevant chunks (Search increased to 10 in documentService)
             const chunks = await retriever.retrieve(question, contextId);
 
-            const topScore = chunks.length > 0 ? chunks[0].score : 0;
-
-            console.log(`[RAG] Top ${Math.min(3, chunks.length)} chunks for query: "${question}"`);
-            chunks.slice(0, 3).forEach((chunk, idx) => {
-                console.log(`[RAG]   ${idx + 1}. Score: ${chunk.score.toFixed(3)} | Content: "${chunk.content.substring(0, 100)}..."`);
-            });
-
-            if (chunks.length === 0 || topScore < RAGConfig.confidenceThreshold) {
-                console.log(`[RAG] Low confidence (score: ${topScore}). Returning fallback.`);
+            if (chunks.length === 0) {
+                console.log(`[RAG] No context found for query. Returning fallback.`);
                 return {
-                    answer: RAGConfig.fallbackMessage,
+                    answer: RAGConfig.fallbackMessage || "No context found for that query.",
                     sources: []
                 };
             }
 
-            console.log(`[RAG] ✓ Confidence acceptable (score: ${topScore.toFixed(3)}). Generating answer...`);
+            const topScore = chunks[0].score;
+            console.log(`[RAG] Top chunks for: "${question}" (Top score: ${topScore.toFixed(3)})`);
 
             // 2. Build the augmented prompt
-            const contextText = chunks.map(c => c.content).join('\n\n');
-            const augmentedPrompt = `You are a helpful assistant. Use ONLY the context provided below to answer the user's question. Do not use prior knowledge or make assumptions beyond what is stated in the context.
+            // We format the segments clearly so the AI can distinguish between them
+            const contextText = chunks
+                .map((c, i) => `--- [VIDEO_SEGMENT_${i+1}] ---\n${c.content}`)
+                .join('\n\n');
 
-Context:
+            const augmentedPrompt = `
+SYSTEM ROLE: You are an expert Video Content Analyst.
+TASK: Analyze the provided transcript segments and answer the user's question accurately.
+
+CONTEXT DATA FROM VIDEO:
 ---------------------
 ${contextText}
 ---------------------
 
-User Question: ${question}
+INSTRUCTIONS:
+1. Use ONLY the data above. No prior knowledge.
+2. The transcript may be messy or unpunctuated. Use logic to reconstruct the speaker's intent.
+3. If asked to "summarize" or "analyse", give a structured breakdown of the most informative segments.
+4. If the context is completely irrelevant to the question, state: "Source data is insufficient for this specific query."
 
-Instructions:
-- If the answer is found in the context, respond clearly and concisely.
-- If the answer is NOT found in the context, say: "I don't have enough information in the provided context to answer that question."
-- Do not fabricate or infer information beyond what is explicitly stated.
+USER QUESTION: ${question}
 
-Answer:`;
+DETAILED RESPONSE:`;
 
             // 3. Generate the answer
+            console.log(`[RAG] Generating answer via GROQ/LLM...`);
             const answer = await generator.generate(augmentedPrompt);
 
-            // FIX: Sources are now deduplicated video titles + URLs, not raw text blobs
-            const seen = new Set<string>();
+            // 4. Extract sources (deduplicated)
             const citations: string[] = [];
+            const seen = new Set<string>();
+            
             for (const chunk of chunks) {
-                const label = chunk.metadata?.title || chunk.metadata?.url || 'Source';
+                const label = chunk.metadata?.title || chunk.metadata?.url || 'Source Document';
                 if (!seen.has(label)) {
                     seen.add(label);
                     citations.push(label);
                 }
             }
 
-            return { answer, sources: citations };
-        } catch (error: any) {
+            return {
+                answer,
+                sources: citations
+            };
+
+        } catch (error) {
             console.error('RAG Pipeline Error:', error);
-            if (error.message.includes('LLM Error') || error.message.includes('API Key')) {
-                throw error;
-            }
-            throw new Error('RAG Pipeline failed to process request');
+            return {
+                answer: "System Error: The AI pipeline encountered a processing fault. Target video source might be unreachable.",
+                sources: []
+            };
         }
     }
 };
