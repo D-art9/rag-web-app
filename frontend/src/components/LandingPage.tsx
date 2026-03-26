@@ -28,7 +28,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onUrlSubmit, onNavigate }) =>
 
     setIsAnalyzing(true);
     try {
-      const response = await fetch('http://localhost:5000/api/documents/upload', {
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://scriptyt-test-laptop.localtunnel.me/api';
+      const response = await fetch(`${API_BASE_URL}/documents/upload`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url }),
