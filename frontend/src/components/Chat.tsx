@@ -63,10 +63,10 @@ const Chat: React.FC<ChatProps> = ({ videoId, onExportToStudy }) => {
                     />
                     
                     <div className="system-data">
-                        <p className="system-label">> VIDEO_ID_STREAM:</p>
+                        <p className="system-label">&gt; VIDEO_ID_STREAM:</p>
                         <p className="system-value mono">{videoId}</p>
                         
-                        <p className="system-label">> KEY_SEGMENTS_MAP:</p>
+                        <p className="system-label">&gt; KEY_SEGMENTS_MAP:</p>
                         <div className="mini-grid">
                             <span>[SUMMARY]</span>
                             <span>[CONCEPTS]</span>

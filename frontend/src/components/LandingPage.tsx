@@ -80,9 +80,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onUrlSubmit, onNavigate }) =>
         <div className="spec-pane pane">
           <div className="pane-header">AVAILABLE_COMMANDS</div>
           <div className="pane-content">
-             <p>> /analyze --url=[LINK]</p>
-             <p>> /history --view-all</p>
-             <p>> /clear --all-cache</p>
+             <p>&gt; /analyze --url=[LINK]</p>
+             <p>&gt; /history --view-all</p>
+             <p>&gt; /clear --all-cache</p>
           </div>
         </div>
       </div>

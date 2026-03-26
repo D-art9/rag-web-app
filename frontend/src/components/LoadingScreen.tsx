@@ -70,9 +70,9 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ isFinished, onAnimationCo
                     
                     <div className="scrolling-logs">
                         {logs.map((log, i) => (
-                            <div key={i} className="log-line">> {log}</div>
+                            <div key={i} className="log-line">&gt; {log}</div>
                         ))}
-                        {message && <div className="log-line active">> {message}</div>}
+                        {message && <div className="log-line active">&gt; {message}</div>}
                         <div ref={logEndRef} />
                     </div>
                 </div>
