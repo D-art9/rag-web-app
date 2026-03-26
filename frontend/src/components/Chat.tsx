@@ -15,258 +15,183 @@ interface Message {
     sources?: string[];
 }
 
-const Chat: React.FC<ChatProps> = ({ videoUrl, videoId, onExportToStudy }) => {
+const Chat: React.FC<ChatProps> = ({ videoId, onExportToStudy }) => {
     const [messages, setMessages] = useState<Message[]>([
-        { text: "Hello! I've analyzed this video. What would you like to know?", sender: 'ai' }
+        { text: "ANALYZE_COMPLETED: SYSTEM_READY_FOR_QUERY", sender: 'ai' }
     ]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
-
     useEffect(() => {
-        scrollToBottom();
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
     const handleSend = async (e?: React.FormEvent) => {
         e?.preventDefault();
         if (!input.trim() || isTyping) return;
-
+        
         const userMsg = input;
         setInput('');
-        setMessages(prev => [...prev, { text: userMsg, sender: 'user' }]);
+        setMessages(p => [...p, { text: userMsg, sender: 'user' }]);
         setIsTyping(true);
 
         try {
             const data = await sendMessage(userMsg, videoId);
-            setMessages(prev => [...prev, { 
-                text: data.answer, 
-                sender: 'ai',
-                sources: data.sources 
-            }]);
-        } catch (err) {
-            setMessages(prev => [...prev, { text: "Sorry, I encountered an error responding.", sender: 'ai' }]);
+            setMessages(p => [...p, { text: data.answer, sender: 'ai', sources: data.sources }]);
+        } catch (err: any) {
+            setMessages(p => [...p, { text: `[ERR_RAG_PIPELINE]: ${err.message}`, sender: 'ai' }]);
         } finally {
             setIsTyping(false);
         }
     };
 
     return (
-        <div className="dashboard-grid">
-            {/* LEFT COLUMN: VIDEO INSIGHTS */}
-            <aside className="insights-panel glass-panel">
-                <div className="section-header">
-                    <h3>Video Insights</h3>
+        <div className="terminal-dashboard">
+            {/* SOURCE INSIGHTS PANE */}
+            <aside className="pane insights-pane">
+                <div className="pane-header">
+                  <span>SOURCE_v1.0.0: /root/insights</span>
+                  <span>[-] [+] [X]</span>
                 </div>
                 
-                <div className="video-preview glass-card">
+                <div className="pane-content">
                     <img 
                         src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`} 
-                        alt="Thumbnail" 
-                        className="thumb"
+                        alt="YOUTUBE_SOURCE" 
+                        style={{ width: '100%', border: '1px solid var(--border-color)', marginBottom: '1rem' }}
                     />
-                    <div className="play-overlay">▶</div>
-                </div>
+                    
+                    <div className="system-data">
+                        <p className="system-label">> VIDEO_ID_STREAM:</p>
+                        <p className="system-value mono">{videoId}</p>
+                        
+                        <p className="system-label">> KEY_SEGMENTS_MAP:</p>
+                        <div className="mini-grid">
+                            <span>[SUMMARY]</span>
+                            <span>[CONCEPTS]</span>
+                            <span>[ANALYSIS]</span>
+                            <span>[TRANSC]</span>
+                        </div>
+                    </div>
 
-                <div className="insights-content">
-                    <div className="insight-badge neon-glow-purple">Key Concepts</div>
-                    <ul className="smart-notes">
-                        <li>• Real-time translation of core topics</li>
-                        <li>• Topic extraction from audio stream</li>
-                        <li>• Semantic indexing of key timestamps</li>
-                        <li>• Cross-referencing with global knowledge</li>
-                    </ul>
-                    <button 
-                        className="export-btn glass-card"
-                        onClick={() => onExportToStudy?.(messages.map(m => m.text).join('\n'))}
-                    >
-                        📥 Export Study Notes
-                    </button>
+                    <div className="system-actions">
+                        <button className="term-btn full" onClick={() => onExportToStudy?.(messages.map(m => m.text).join('\n'))}>
+                           /run EXPORT_LOG
+                        </button>
+                    </div>
                 </div>
             </aside>
 
-            {/* RIGHT COLUMN: CHAT INTERFACE */}
-            <main className="chat-interface glass-panel">
-                <div className="section-header">
-                    <h3>AI Study Assistant</h3>
+            {/* QUERY SHELL PANE */}
+            <main className="pane chat-pane">
+                <div className="pane-header">
+                  <span>SCRIPTYT: /bin/llm_query_shell</span>
+                  <span>[0.12ms]</span>
                 </div>
 
-                <div className="messages-flow">
+                <div className="shell-flow">
                     {messages.map((msg, i) => (
-                        <div key={i} className={`message-wrapper ${msg.sender}`}>
-                            <div className="avatar-small">{msg.sender === 'ai' ? '🧠' : '👤'}</div>
-                            <div className={`bubble glass-card ${msg.sender === 'user' ? 'neon-glow-cyan' : 'neon-glow-purple'}`}>
+                        <div key={i} className={`shell-msg ${msg.sender}`}>
+                            <span className="msg-prompt">
+                                {msg.sender === 'user' ? 'root@shell:~$ ' : 'kernel@rag:~$ '}
+                            </span>
+                            <div className="msg-content">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
                                 {msg.sources && msg.sources.length > 0 && (
-                                    <div className="sources-tag">📚 {msg.sources.length} Sources</div>
+                                    <div className="msg-sources">
+                                      // REF_SOURCES: {msg.sources.join(', ')}
+                                    </div>
                                 )}
                             </div>
                         </div>
                     ))}
-                    {isTyping && (
-                        <div className="message-wrapper ai">
-                            <div className="bubble typing-dots">...</div>
-                        </div>
-                    )}
+                    {isTyping && <div className="shell-msg ai">kernel@rag:~$ [ANALYZING_TRANSCRIPTS...]</div>}
                     <div ref={messagesEndRef} />
                 </div>
 
-                <form onSubmit={handleSend} className="chat-input-area">
-                    <div className="input-box glass-card">
+                <form onSubmit={handleSend} className="shell-input-area">
+                    <div className="input-prompt">
+                        <span>root@shell:~$ </span>
                         <input 
                             type="text" 
-                            placeholder="Ask a question about the video..." 
+                            className="term-input" 
+                            placeholder="TYPE_QUESTION_HERE..." 
+                            autoFocus
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                         />
-                        <button type="submit" className="send-btn">Send 🚀</button>
+                        <button type="submit" className="term-btn">SEND_v1.0</button>
                     </div>
                 </form>
             </main>
 
             <style>{`
-                .dashboard-grid {
+                .terminal-dashboard {
                     display: grid;
-                    grid-template-columns: 350px 1fr;
-                    gap: 1.5rem;
-                    height: calc(100vh - 4rem);
-                }
-
-                .section-header {
-                    margin-bottom: 2rem;
-                    padding-bottom: 1rem;
-                    border-bottom: 1px solid var(--glass-border);
-                }
-
-                .insights-panel, .chat-interface {
-                    padding: 2rem;
-                    border-radius: var(--radius-lg);
-                    display: flex;
-                    flex-direction: column;
-                }
-
-                .video-preview {
-                    width: 100%;
-                    aspect-ratio: 16/9;
-                    overflow: hidden;
-                    position: relative;
-                    margin-bottom: 2rem;
-                }
-
-                .video-preview .thumb {
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                }
-
-                .play-overlay {
-                    position: absolute;
-                    inset: 0;
-                    background: rgba(0,0,0,0.4);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 2rem;
-                }
-
-                .insight-badge {
-                    display: inline-block;
-                    padding: 0.4rem 1rem;
-                    background: var(--accent-secondary);
-                    color: #fff;
-                    border-radius: 100px;
-                    font-size: 0.75rem;
-                    font-weight: 700;
-                    margin-bottom: 1.5rem;
-                }
-
-                .smart-notes {
-                    list-style: none;
-                    color: var(--text-secondary);
-                    font-size: 0.9rem;
-                    display: flex;
-                    flex-direction: column;
+                    grid-template-columns: 320px 1fr;
                     gap: 1rem;
-                    margin-bottom: 2.5rem;
+                    height: 100%;
                 }
 
-                .export-btn {
-                    width: 100%;
-                    padding: 1rem;
-                    background: rgba(255,255,255,0.05);
-                    border: 1px solid var(--glass-border);
-                    color: #fff;
-                    cursor: pointer;
-                    font-weight: 600;
+                .pane { display: flex; flex-direction: column; height: 100%; }
+                .pane-content { padding: 1.5rem; flex-grow: 1; overflow-y: auto; }
+
+                .system-data { margin-top: 1rem; }
+                .system-label { font-size: 0.6rem; color: var(--muted-color); font-weight: bold; }
+                .system-value { font-size: 0.8rem; margin: 0.2rem 0 0.8rem 0; }
+                
+                .mini-grid {
+                   display: grid;
+                   grid-template-columns: 1fr 1fr;
+                   gap: 0.2rem;
+                   font-size: 0.6rem;
+                   margin-bottom: 2rem;
                 }
 
-                /* CHAT STYLES */
-                .messages-flow {
+                /* SHELL CHAT */
+                .shell-flow {
                     flex-grow: 1;
+                    padding: 1.5rem;
                     overflow-y: auto;
                     display: flex;
                     flex-direction: column;
-                    gap: 1.5rem;
-                    padding-right: 1rem;
-                    margin-bottom: 1.5rem;
+                    gap: 1.2rem;
                 }
 
-                .message-wrapper {
-                    display: flex;
-                    gap: 1rem;
-                    max-width: 80%;
+                .shell-msg { display: flex; gap: 0.5rem; align-items: flex-start; }
+                .msg-prompt { color: var(--secondary-color); font-weight: bold; flex-shrink: 0; }
+                .msg-content { font-size: 0.9rem; line-height: 1.4; color: var(--primary-color); }
+                .msg-content p { display: inline; }
+                
+                .msg-sources {
+                    display: block;
+                    font-size: 0.7rem;
+                    color: var(--muted-color);
+                    margin-top: 0.5rem;
                 }
 
-                .message-wrapper.user {
-                    flex-direction: row-reverse;
-                    align-self: flex-end;
-                }
-
-                .bubble {
+                .shell-input-area {
                     padding: 1rem 1.5rem;
+                    border-top: 1px dashed var(--border-color);
                 }
 
-                .user .bubble {
-                    background: rgba(0, 247, 255, 0.05);
-                    border-color: rgba(0, 247, 255, 0.2);
-                }
-
-                .ai .bubble {
-                    background: rgba(168, 85, 247, 0.05);
-                    border-color: rgba(168, 85, 247, 0.2);
-                }
-
-                .input-box {
+                .input-prompt {
                     display: flex;
-                    padding: 0.5rem;
-                    gap: 1rem;
+                    gap: 0.5rem;
+                    align-items: center;
                 }
-
-                .input-box input {
+                
+                .input-prompt input {
                     flex-grow: 1;
                     background: transparent;
                     border: none;
-                    color: #fff;
-                    padding: 0.8rem;
                     outline: none;
                 }
 
-                .send-btn {
-                    background: var(--accent-primary);
-                    border: none;
-                    padding: 0.8rem 1.5rem;
-                    border-radius: 12px;
-                    font-weight: 700;
-                    cursor: pointer;
-                }
-
-                .sources-tag {
-                    margin-top: 0.5rem;
-                    font-size: 0.7rem;
-                    color: var(--text-secondary);
+                @media (max-width: 900px) {
+                  .terminal-dashboard { grid-template-columns: 1fr; }
+                  .insights-pane { display: none; }
                 }
             `}</style>
         </div>

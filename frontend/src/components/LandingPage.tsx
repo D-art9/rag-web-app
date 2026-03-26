@@ -1,191 +1,152 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { uploadDocument } from '../services/api';
 import LoadingScreen from './LoadingScreen';
 
 interface LandingPageProps {
   onUrlSubmit: (url: string, id: string) => void;
-  onNavigate: (view: 'landing' | 'chat' | 'dataflow' | 'contact' | 'study') => void;
+  onNavigate: (view: any) => void;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onUrlSubmit, onNavigate }) => {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [typedHeader, setTypedHeader] = useState('');
+  const fullHeader = "INITIATING SYSTEM PROTOCOL: SCRIPTYT_RECOVERY_NODE...";
+
+  useEffect(() => {
+    let index = 0;
+    const interval = setInterval(() => {
+      setTypedHeader(fullHeader.substring(0, index));
+      index++;
+      if (index > fullHeader.length) clearInterval(interval);
+    }, 40);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!url) return;
-
     setLoading(true);
     setError('');
 
     try {
-      const response = await uploadDocument(url);
-      onUrlSubmit(url, response.id);
+      const resp = await uploadDocument(url);
+      onUrlSubmit(url, resp.id);
     } catch (err: any) {
-      setError(err.message || 'Failed to analyze video');
+      setError(`[ERR_STATUS]: ${err.message || "UNABLE TO ANALYZE VIDEO SOURCE"}`);
       setLoading(false);
     }
   };
 
-  if (loading) return <LoadingScreen message="Extracting Knowledge..." />;
+  if (loading) return <LoadingScreen message="UPDATING SYSTEM SEGMENTS..." />;
 
   return (
-    <div className="landing-view">
-      <header className="hero-section">
-        <h1 className="hero-title">
-          Master Any <span className="highlight-text">Video</span> in Seconds
-        </h1>
-        <p className="hero-subtitle">
-          Turn long YouTube videos into structured study notes, AI-powered summaries, and interactive chat.
-        </p>
-      </header>
+    <div className="terminal-landing">
+      <div className="landing-header">
+        <h1 className="heading">{typedHeader}</h1>
+        <p className="subtext">// ANALYZE_YOUTUBE_SOURCE [TARGET_URL_REQUIRED]</p>
+      </div>
 
-      <section className="input-section glass-panel neon-glow-purple">
-        <form onSubmit={handleSubmit} className="url-form">
-          <div className="input-wrapper glass-card">
-            <span className="input-icon">📹</span>
-            <input
-              type="text"
-              placeholder="Paste YouTube Video URL here..."
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              className="url-input"
-            />
-            <button type="submit" className="submit-btn neon-glow-cyan">
-              Analyze Video
-            </button>
-          </div>
-          {error && <p className="error-message">{error}</p>}
-        </form>
+      <form onSubmit={handleSubmit} className="terminal-form">
+        <div className="form-prompt">
+          <span className="prompt-char">root@scriptyt:~$</span>
+          <input
+            type="text"
+            className="term-input url-field"
+            placeholder="0xYT_SOURCE_HERE..."
+            autoFocus
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+          />
+          <button type="submit" className="term-btn analyze-btn">
+            RUN_ANALYZE_v2.0
+          </button>
+        </div>
+        {error && <div className="term-error">| {error} |</div>}
+      </form>
 
-        <div className="feature-grid">
-          <div className="feature-item">
-            <span className="f-icon">📝</span>
-            <h3>Smart Summaries</h3>
-            <p>Get the core takeaways instantly.</p>
-          </div>
-          <div className="feature-item">
-            <span className="f-icon">💬</span>
-            <h3>AI Chat Assistant</h3>
-            <p>Ask anything about the video content.</p>
-          </div>
-          <div className="feature-item">
-            <span className="f-icon">⚡</span>
-            <h3>Zero Delay</h3>
-            <p>Ready to study in less than 30 seconds.</p>
+      <div className="system-specs">
+        <div className="spec-pane pane">
+          <div className="pane-header">SYSTEM_STATS</div>
+          <div className="pane-content">
+             <p>CPU_LOAD: [||||||||||.....] 68%</p>
+             <p>DISK_USAGE: [||||||.......] 42%</p>
+             <p>RAG_ENGINE: [ENABLED]</p>
+             <p>MOD: PHOSPHOR_GREEN</p>
           </div>
         </div>
-      </section>
+
+        <div className="spec-pane pane">
+          <div className="pane-header">AVAILABLE_COMMANDS</div>
+          <div className="pane-content">
+             <p>> /analyze --url=[LINK]</p>
+             <p>> /history --view-all</p>
+             <p>> /clear --all-cache</p>
+          </div>
+        </div>
+      </div>
 
       <style>{`
-        .landing-view {
-          padding-top: 5vh;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 3rem;
-        }
-
-        .hero-section {
-          text-align: center;
-          max-width: 800px;
-        }
-
-        .hero-title {
-          font-size: 3.5rem;
-          font-weight: 800;
-          letter-spacing: -2px;
-          margin-bottom: 1.5rem;
-          line-height: 1.1;
-        }
-
-        .highlight-text {
-          color: var(--accent-primary);
-          text-shadow: 0 0 20px rgba(0, 247, 255, 0.4);
-        }
-
-        .hero-subtitle {
-          font-size: 1.25rem;
-          color: var(--text-secondary);
-          max-width: 600px;
-          margin: 0 auto;
-        }
-
-        .input-section {
-          width: 100%;
-          max-width: 900px;
-          padding: 3rem;
-          border-radius: var(--radius-lg);
+        .terminal-landing {
+          padding: 2rem;
           display: flex;
           flex-direction: column;
           gap: 3rem;
+          height: 100%;
         }
 
-        .input-wrapper {
-          display: flex;
-          padding: 0.5rem;
-          gap: 0.5rem;
-          border-radius: 16px;
-          background: rgba(255, 255, 255, 0.05);
+        .heading { font-size: 2.2rem; }
+        .subtext { color: var(--muted-color); font-size: 0.8rem; margin-top: 0.5rem; }
+
+        .terminal-form {
+          margin-top: 2rem;
         }
 
-        .input-icon {
-          padding: 0 1rem;
+        .form-prompt {
           display: flex;
           align-items: center;
-          font-size: 1.5rem;
+          gap: 1.2rem;
+          font-size: 1.2rem;
         }
 
-        .url-input {
+        .prompt-char { color: var(--secondary-color); font-weight: bold; }
+
+        .url-field {
           flex-grow: 1;
-          background: transparent;
-          border: none;
-          color: #fff;
-          font-size: 1.1rem;
-          padding: 1rem;
-          outline: none;
+          font-size: 1.2rem;
+          padding: 0.5rem;
+          color: var(--primary-color);
         }
 
-        .submit-btn {
-          padding: 1rem 2rem;
-          background: var(--accent-primary);
-          border: none;
-          color: #000;
-          font-weight: 700;
-          font-size: 1rem;
-          border-radius: 12px;
-          cursor: pointer;
-          transition: transform 0.2s ease;
-        }
-
-        .submit-btn:hover {
-          transform: translateY(-2px);
-          filter: brightness(1.1);
-        }
-
-        .feature-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 2rem;
-        }
-
-        .feature-item {
-          text-align: center;
-          padding: 1.5rem;
-          background: rgba(255, 255, 255, 0.02);
-          border-radius: 16px;
-        }
-
-        .f-icon { font-size: 1.5rem; margin-bottom: 1rem; display: block; }
-        .feature-item h3 { font-size: 1rem; margin-bottom: 0.5rem; }
-        .feature-item p { font-size: 0.8rem; color: var(--text-secondary); }
-
-        .error-message {
-          color: #ff4d4d;
-          margin-top: 1rem;
+        .analyze-btn {
           font-size: 0.9rem;
-          text-align: center;
+        }
+
+        .term-error {
+          color: var(--error-color);
+          margin-top: 1.5rem;
+          font-weight: bold;
+          font-size: 0.9rem;
+        }
+
+        .system-specs {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 2rem;
+          margin-top: auto;
+        }
+
+        .pane-content {
+          padding: 1rem;
+          font-size: 0.8rem;
+          line-height: 1.6;
+        }
+
+        @media (max-width: 800px) {
+          .system-specs { grid-template-columns: 1fr; }
+          .form-prompt { flex-direction: column; align-items: flex-start; }
+          .url-field { width: 100%; }
         }
       `}</style>
     </div>

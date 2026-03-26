@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface LoadingScreenProps {
     isFinished?: boolean;
@@ -7,195 +7,161 @@ interface LoadingScreenProps {
 }
 
 const STEPS = [
-    { text: "Initializing connection...", threshold: 10 },
-    { text: "Resolving YouTube URL...", threshold: 20 },
-    { text: "Connecting to extractor...", threshold: 35 },
-    { text: "Extracting transcript...", threshold: 50 },
-    { text: "Parsing segments...", threshold: 65 },
-    { text: "Generating embeddings...", threshold: 80 },
-    { text: "Indexing knowledge...", threshold: 90 },
-    { text: "Finalizing...", threshold: 95 }
+    { text: "INITIATING_SCRIPTYT_CORE_v2.1", type: "system" },
+    { text: "CONNECTING_TO_EXTRACTOR_NODE_04...", type: "system" },
+    { text: "RESOLVING_YOUTUBE_API_TOKENS...", type: "info" },
+    { text: "STATUS: [RESOLVED]", type: "ok" },
+    { text: "ATTACHING_YT_DLP_DECODER...", type: "info" },
+    { text: "FETCHING_TRANSCRIPT_BLOB... [48kb]", type: "info" },
+    { text: "PARSING_TEXT_SEGMENTS...", type: "system" },
+    { text: "UPDATING_SEMANTIC_INDEX...", type: "system" },
+    { text: "LLM_SERVICE: [HANDSHAKE_OK]", type: "ok" },
+    { text: "FINALIZING_PIPELINE_HANDSHAKE...", type: "system" },
+    { text: "SYSTEM_READY: [DASHBOARD_LIVE]", type: "ok" }
 ];
 
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ isFinished, onAnimationComplete, message }) => {
     const [progress, setProgress] = useState(0);
-    const [currentStep, setCurrentStep] = useState(0);
+    const [logs, setLogs] = useState<string[]>([]);
+    const logEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        let interval: NodeJS.Timeout;
+        let index = 0;
+        const logInterval = setInterval(() => {
+            if (index < STEPS.length) {
+                const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                const logLine = `[${timestamp}] ${STEPS[index].text}`;
+                setLogs(prev => [...prev, logLine]);
+                index++;
+                setProgress(Math.round((index / STEPS.length) * 100));
+            } else {
+                clearInterval(logInterval);
+                if (isFinished && onAnimationComplete) onAnimationComplete();
+            }
+        }, 150);
 
-        if (isFinished) {
-            // Fast forward to 100%
-            setProgress(100);
-            setTimeout(() => {
-                if (onAnimationComplete) onAnimationComplete();
-            }, 800);
-        } else {
-            // Simulated progress up to 90%
-            interval = setInterval(() => {
-                setProgress(prev => {
-                    const next = prev + (Math.random() * 2);
-
-                    // Slow down as we approach 90%
-                    if (next > 90) return 90 + (Math.random() * 0.1); // Crawl very slowly at 90
-
-                    // Update step text based on progress
-                    const stepIndex = STEPS.findIndex(s => s.threshold > prev);
-                    if (stepIndex !== -1) setCurrentStep(stepIndex);
-
-                    return next;
-                });
-            }, 100);
-        }
-
-        return () => clearInterval(interval);
+        return () => clearInterval(logInterval);
     }, [isFinished, onAnimationComplete]);
 
+    useEffect(() => {
+        logEndRef.current?.scrollIntoView({ behavior: "auto" });
+    }, [logs]);
+
     return (
-        <div style={styles.container} className="fade-in">
-            <div style={styles.content}>
-                {/* Spinner / Icon */}
-                <div style={styles.iconWrapper}>
-                    <div style={styles.pulseRing}></div>
-                    <div style={styles.logo}>⚡</div>
+        <div className="terminal-loading">
+            <div className="crt-overlay" />
+            
+            <div className="loading-content pane">
+                <div className="pane-header">
+                  <span>SYSTEM_LOAD: /bin/scriptyt_boot</span>
+                  <span>{progress}%</span>
+                </div>
+                
+                <div className="log-window">
+                    <pre className="ascii-art">{`
+  #####  #####  ######  #####  #######
+ #     # #     # #     # #    #    #   
+ #       #     # #     # #    #    #   
+  #####  #     # ######  #####     #   
+       # #     # #   #   #         #   
+ #     # #     # #    #  #         #   
+  #####  #####  #     # #         #
+                    `}</pre>
+                    
+                    <div className="scrolling-logs">
+                        {logs.map((log, i) => (
+                            <div key={i} className="log-line">> {log}</div>
+                        ))}
+                        {message && <div className="log-line active">> {message}</div>}
+                        <div ref={logEndRef} />
+                    </div>
                 </div>
 
-                <h2 style={styles.title}>{message || (isFinished ? "Complete!" : "Processing Content")}</h2>
-
-                <div style={styles.barContainer}>
-                    <div style={{ ...styles.barFill, width: `${progress}%` }}></div>
-                </div>
-
-                <div style={styles.meta}>
-                    <span style={styles.percentage}>{Math.round(progress)}%</span>
-                    <span style={styles.stepText}>
-                        {isFinished ? "Complete!" : STEPS[currentStep]?.text || "Processing..."}
-                    </span>
-                </div>
-
-                {/* Pipeline visualizer (optional cool extra) */}
-                <div style={styles.pipeline}>
-                    <div style={{ ...styles.node, opacity: progress > 20 ? 1 : 0.3 }}>YT</div>
-                    <div style={{ ...styles.line, width: progress > 35 ? '40px' : '0px' }}></div>
-                    <div style={{ ...styles.node, opacity: progress > 50 ? 1 : 0.3 }}>Audio</div>
-                    <div style={{ ...styles.line, width: progress > 70 ? '40px' : '0px' }}></div>
-                    <div style={{ ...styles.node, opacity: progress > 85 ? 1 : 0.3 }}>AI</div>
-                    <div style={{ ...styles.line, width: progress > 95 ? '40px' : '0px' }}></div>
-                    <div style={{ ...styles.node, opacity: progress >= 100 ? 1 : 0.3 }}>DB</div>
+                <div className="progress-bar-container">
+                    <div className="progress-label">INITIALIZATION_PROGRESS: {progress}%</div>
+                    <div className="progress-bar-outer">
+                        <div className="progress-bar-inner" style={{ width: `${progress}%` }} />
+                    </div>
                 </div>
             </div>
+
+            <style>{`
+                .terminal-loading {
+                    position: fixed;
+                    inset: 0;
+                    background: var(--bg-color);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 2rem;
+                    z-index: 10000;
+                }
+
+                .loading-content {
+                    width: 100%;
+                    max-width: 800px;
+                    height: 500px;
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .log-window {
+                    flex-grow: 1;
+                    padding: 2rem;
+                    overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .ascii-art {
+                    font-size: 0.6rem;
+                    color: var(--primary-color);
+                    margin-bottom: 2rem;
+                    text-shadow: var(--text-glow);
+                }
+
+                .scrolling-logs {
+                    flex-grow: 1;
+                    overflow-y: auto;
+                    font-family: var(--font-mono);
+                    font-size: 0.8rem;
+                    color: var(--muted-color);
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.2rem;
+                }
+
+                .log-line.active {
+                    color: var(--primary-color);
+                    font-weight: bold;
+                }
+
+                .progress-bar-container {
+                    padding: 1.5rem 2rem;
+                    border-top: 1px dashed var(--border-color);
+                }
+
+                .progress-label {
+                    font-size: 0.7rem;
+                    margin-bottom: 0.5rem;
+                    color: var(--muted-color);
+                }
+
+                .progress-bar-outer {
+                    height: 12px;
+                    width: 100%;
+                    border: 1px solid var(--border-color);
+                    padding: 2px;
+                }
+
+                .progress-bar-inner {
+                    height: 100%;
+                    background: var(--primary-color);
+                    box-shadow: var(--glow-shadow);
+                }
+            `}</style>
         </div>
     );
-};
-
-const styles: { [key: string]: React.CSSProperties } = {
-    container: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        background: 'rgba(11, 14, 20, 0.9)',
-        backdropFilter: 'blur(30px)',
-        zIndex: 10000,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    content: {
-        width: '100%',
-        maxWidth: '500px',
-        padding: '3rem',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '2rem',
-    },
-    iconWrapper: {
-        position: 'relative',
-        marginBottom: '1rem',
-    },
-    pulseRing: {
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: '80px',
-        height: '80px',
-        borderRadius: '50%',
-        border: '2px solid var(--accent-color)',
-        animation: 'pulse 2s infinite',
-        opacity: 0.5,
-    },
-    logo: {
-        fontSize: '3rem',
-        position: 'relative',
-        zIndex: 2,
-    },
-    title: {
-        color: 'white',
-        fontSize: '2rem',
-        fontWeight: 700,
-        margin: 0,
-        letterSpacing: '-1px',
-    },
-    barContainer: {
-        width: '100%',
-        height: '6px',
-        background: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: '100px',
-        overflow: 'hidden',
-    },
-    barFill: {
-        height: '100%',
-        background: 'linear-gradient(90deg, var(--accent-color), #ff00cc)',
-        borderRadius: '100px',
-        transition: 'width 0.2s ease-out',
-        boxShadow: '0 0 20px rgba(230, 57, 70, 0.5)',
-    },
-    meta: {
-        width: '100%',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        color: 'var(--text-secondary)',
-        fontSize: '0.9rem',
-        fontFamily: 'monospace',
-    },
-    percentage: {
-        color: 'white',
-        fontWeight: 700,
-    },
-    stepText: {
-        color: 'var(--accent-color)',
-    },
-    pipeline: {
-        display: 'flex',
-        alignItems: 'center',
-        marginTop: '2rem',
-        gap: '0.5rem',
-    },
-    node: {
-        width: '40px',
-        height: '40px',
-        borderRadius: '50%',
-        background: 'rgba(255,255,255,0.05)',
-        border: '1px solid rgba(255,255,255,0.1)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '0.7rem',
-        fontWeight: 700,
-        color: 'white',
-        transition: 'all 0.5s',
-    },
-    line: {
-        height: '2px',
-        background: 'var(--accent-color)',
-        transition: 'width 0.5s ease-out',
-        width: '0px'
-        // width handled by state
-    }
 };
 
 export default LoadingScreen;

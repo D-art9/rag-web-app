@@ -23,220 +23,169 @@ const App: React.FC = () => {
     setTimeout(() => {
       setCurrentView('chat');
       setIsZooming(false);
-    }, 800);
+    }, 400); // Shorter transition for terminal
   };
 
-  const handleNavigate = (view: View) => {
-    setCurrentView(view);
-  };
-
-  const handleExportToStudy = (content: string) => {
-    setStudyContext(content);
-    setCurrentView('study');
-  };
-
-  // Sidebar Items based on your reference image
   const navItems = [
-    { id: 'landing', label: 'Home', icon: '🏠' },
-    { id: 'chat', label: 'Dashboard', icon: '📊' },
-    { id: 'study', label: 'AI Study', icon: '🧠' },
-    { id: 'dataflow', label: 'Tech Stack', icon: '⚙️' },
-    { id: 'contact', label: 'Support', icon: '📞' },
+    { id: 'landing', label: '01_HOME', icon: '~' },
+    { id: 'chat', label: '02_DASHBOARD', icon: '>' },
+    { id: 'study', label: '03_STUDY_AI', icon: '?' },
+    { id: 'dataflow', label: '04_STACK', icon: '#' },
+    { id: 'contact', label: '05_SUPPORT', icon: '@' },
   ];
 
   return (
-    <div className="app-root">
-      {/* GLOBAL BACKGROUND */}
-      <div className="aurora-bg" />
+    <div className="terminal-root">
+      {/* THE CRT SCANLINE OVERLAY */}
+      <div className="crt-overlay" />
 
-      {/* SIDEBAR NAVIGATION - GLASS EFFECT */}
-      <nav className="glass-panel sidebar">
-        <div className="sidebar-logo">
-          <span className="logo-icon">💠</span>
-          <span className="logo-text">ScriptYT</span>
+      {/* TERMINAL SHELL NAVIGATION (NAV PANE) */}
+      <nav className="pane nav-pane">
+        <div className="pane-header">
+          <span>MULTIPLEXER_v1.0.0</span>
+          <span>[X]</span>
         </div>
         
-        <div className="nav-menu">
+        <div className="shell-logo">
+          <pre style={{ fontSize: '0.4rem', color: 'var(--primary-color)' }}>{`
+   ____ ____ ____ ____ ____ 
+  | S || C || R || Y || P |
+  |____|____|____|____|____|
+  | T || Y || T ||   ||   |
+  |____|____|____|____|____|
+          `}</pre>
+        </div>
+        
+        <div className="shell-menu">
           {navItems.map((item) => (
             <button
               key={item.id}
-              className={`nav-item ${currentView === item.id ? 'active' : ''}`}
-              onClick={() => handleNavigate(item.id as View)}
+              className={`shell-item ${currentView === item.id ? 'active' : ''}`}
+              onClick={() => setCurrentView(item.id as View)}
             >
-              <span className="nav-icon">{item.icon}</span>
-              <span className="nav-label">{item.label}</span>
+              <span className="shell-icon">{item.icon}</span>
+              <span className="shell-label">{item.label}</span>
             </button>
           ))}
         </div>
 
-        <div className="sidebar-footer">
-          <div className="profile-badge glass-card">
-            <div className="avatar">👤</div>
-            <div className="profile-info">
-              <p className="name">User</p>
-              <p className="status">Free Account</p>
-            </div>
+        <div className="shell-status">
+          <div className="status-grid">
+              <span>USER_ID: anonym</span>
+              <span>CONN: [OK]</span>
+              <span>MEM: 48kb</span>
           </div>
         </div>
       </nav>
 
-      <main className="main-content">
+      {/* MAIN VIEWPORT PANES */}
+      <main className="shell-main">
         {currentView === 'landing' && (
-          <div className={`view-container ${isZooming ? 'zoom-out-exit' : ''}`}>
-            <LandingPage onUrlSubmit={handleUrlSubmit} onNavigate={handleNavigate} />
-          </div>
-        )}
-
-        {currentView === 'dataflow' && (
-          <div className="view-container">
-            <Dataflow onBack={() => setCurrentView('landing')} />
-          </div>
-        )}
-
-        {currentView === 'contact' && (
-          <div className="view-container">
-            <ContactPage onBack={() => setCurrentView('landing')} />
+          <div className="pane view-pane">
+            <div className="pane-header">
+              <span>SCRIPTYT: /root/home</span>
+              <span>08:00 AM</span>
+            </div>
+            <LandingPage onUrlSubmit={handleUrlSubmit} onNavigate={setCurrentView} />
           </div>
         )}
 
         {currentView === 'chat' && (
-          <div className="view-container">
-            {videoUrl ? (
-              <Chat
-                videoUrl={videoUrl}
-                videoId={videoId || ''}
-                onExportToStudy={handleExportToStudy}
-              />
-            ) : (
-                <div className="empty-state glass-panel">
-                    <h2>No Video Selected</h2>
-                    <p>Go to the Home page to analyze your first YouTube video!</p>
-                    <button className="primary-btn" onClick={() => setCurrentView('landing')}>Go to Home</button>
-                </div>
-            )}
-          </div>
-        )}
-
-        {currentView === 'study' && (
-          <div className="view-container">
-            <StudyChat
-              initialContext={studyContext}
-              onBack={() => setCurrentView('chat')}
+          <div className="pane view-pane">
+            <div className="pane-header">
+              <span>SCRIPTYT: /root/dashboard</span>
+              <span>01:00 PM</span>
+            </div>
+            <Chat
+              videoUrl={videoUrl || ''}
+              videoId={videoId || ''}
+              onExportToStudy={(c) => { setStudyContext(c); setCurrentView('study'); }}
             />
           </div>
         )}
+
+        {/* Other views following the same pane pattern... */}
+        {currentView === 'dataflow' && <Dataflow onBack={() => setCurrentView('landing')} />}
+        {currentView === 'contact' && <ContactPage onBack={() => setCurrentView('landing')} />}
+        {currentView === 'study' && <StudyChat initialContext={studyContext} onBack={() => setCurrentView('chat')} />}
       </main>
 
       <style>{`
-        .app-root {
+        .terminal-root {
           display: flex;
           height: 100vh;
           width: 100vw;
-          overflow: hidden;
+          background: var(--bg-color);
+          padding: 1rem;
+          gap: 1rem;
         }
 
-        .sidebar {
-          width: var(--sidebar-width);
-          height: 100%;
-          padding: 2rem 1.5rem;
+        .nav-pane {
+          width: 220px;
           display: flex;
           flex-direction: column;
-          gap: 2rem;
-          border-right: 1px solid var(--glass-border);
           flex-shrink: 0;
         }
 
-        .logo-text {
-          font-weight: 700;
-          font-size: 1.5rem;
-          background: linear-gradient(90deg, #fff, var(--accent-primary));
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          margin-left: 0.5rem;
+        .shell-logo {
+          padding: 1rem;
+          text-align: center;
+          border-bottom: 1px dashed var(--border-color);
         }
 
-        .nav-menu {
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
+        .shell-menu {
+          padding: 1rem 0;
           flex-grow: 1;
         }
 
-        .nav-item {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          padding: 0.8rem 1rem;
-          background: transparent;
-          border: none;
-          color: var(--text-secondary);
-          border-radius: 12px;
-          cursor: pointer;
-          transition: all 0.2s ease;
+        .shell-item {
           width: 100%;
           text-align: left;
+          background: transparent;
+          border: none;
+          color: var(--primary-color);
+          padding: 0.8rem 1rem;
+          font-family: var(--font-mono);
+          cursor: pointer;
+          display: flex;
+          gap: 0.8rem;
+          transition: background 0.1s;
         }
 
-        .nav-item:hover, .nav-item.active {
-          background: rgba(255, 255, 255, 0.05);
-          color: #fff;
+        .shell-item:hover, .shell-item.active {
+          background: var(--primary-color);
+          color: var(--bg-color);
         }
 
-        .nav-item.active {
-          border-left: 3px solid var(--accent-primary);
+        .shell-status {
+          padding: 1rem;
+          border-top: 1px dashed var(--border-color);
+          font-size: 0.6rem;
+          color: var(--muted-color);
         }
 
-        .main-content {
+        .status-grid {
+          display: grid;
+          gap: 0.2rem;
+        }
+
+        .shell-main {
           flex-grow: 1;
-          height: 100%;
-          overflow-y: auto;
-          position: relative;
-          padding: 2rem;
-        }
-
-        .view-container {
-          width: 100%;
-          max-width: 1400px;
-          margin: 0 auto;
-          height: 100%;
-        }
-
-        .profile-badge {
           display: flex;
-          align-items: center;
-          gap: 1rem;
-          padding: 0.8rem;
+          flex-direction: column;
+          min-width: 0;
         }
 
-        .avatar {
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          background: var(--accent-secondary);
+        .view-pane {
+          height: 100%;
           display: flex;
-          align-items: center;
-          justify-content: center;
+          flex-direction: column;
+          overflow: hidden;
         }
 
-        .profile-info .name { font-weight: 600; font-size: 0.9rem; }
-        .profile-info .status { font-size: 0.75rem; color: var(--text-secondary); }
-
-        .empty-state {
-            padding: 4rem;
-            text-align: center;
-            border-radius: var(--radius-lg);
-            margin-top: 10vh;
-        }
-        
-        .primary-btn {
-            margin-top: 1.5rem;
-            padding: 0.8rem 2rem;
-            background: var(--accent-primary);
-            border: none;
-            border-radius: 12px;
-            color: #000;
-            font-weight: 600;
-            cursor: pointer;
+        @media (max-width: 800px) {
+          .terminal-root { flex-direction: column; }
+          .nav-pane { width: 100%; height: auto; }
         }
       `}</style>
     </div>
