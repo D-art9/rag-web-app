@@ -23,7 +23,8 @@ export const transcriptService = {
         try {
             // First attempt to Primary (Render)
             const response = await axios.post(`${primaryUrl}/extract`, { url: videoUrl }, {
-                timeout: 120000 // 2 minutes
+                timeout: 120000, // 2 minutes
+                headers: { 'Bypass-Tunnel-Reminder': 'true' } // Allow tunnels like Localtunnel/Ngrok
             });
 
             return transcriptService._parseResponse(response.data);
@@ -39,7 +40,8 @@ export const transcriptService = {
                 console.log(`[INGEST] 🔄 Retrying with FALLBACK Service (Home Server): ${fallbackUrl}`);
                 try {
                     const fallbackResponse = await axios.post(`${fallbackUrl}/extract`, { url: videoUrl }, {
-                        timeout: 120000 // 2 minutes
+                        timeout: 120000, // 2 minutes
+                        headers: { 'Bypass-Tunnel-Reminder': 'true' }
                     });
 
                     console.log(`[INGEST] ✓ Fallback Extraction Succeeded!`);
