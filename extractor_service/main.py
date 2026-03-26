@@ -6,7 +6,7 @@ import uvicorn
 import logging
 import random
 from urllib.parse import urlparse, parse_qs
-from youtube_transcript_api import YouTubeTranscriptApi
+import youtube_transcript_api # Import the entire core module first
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
@@ -21,7 +21,6 @@ class VideoRequest(BaseModel):
 def health_check():
     return {"status": "ok", "service": "YouTube Extractor"}
 
-
 def parse_video_id(url: str) -> str:
     """Robustly parse the YouTube video ID from all URL formats."""
     parsed = urlparse(url)
@@ -33,8 +32,7 @@ def parse_video_id(url: str) -> str:
     qs = parse_qs(parsed.query)
     if "v" in qs and qs["v"]:
         return qs["v"][0]
-    raise ValueError(f"Could not parse YouTube video ID from URL: {url}")
-
+    return ""
 
 def get_random_proxy() -> str:
     """Rotates through the YOUTUBE_PROXIES pool."""
@@ -42,46 +40,30 @@ def get_random_proxy() -> str:
     if proxies_env:
         proxy_list = [p.strip() for p in proxies_env.split(",") if p.strip()]
         if proxy_list:
-            chosen = random.choice(proxy_list)
-            logger.info(f"Using rotated proxy: {chosen.split('@')[-1]}")
-            return chosen
-    
-    single_proxy = os.getenv("YOUTUBE_PROXY")
-    if single_proxy:
-        return single_proxy
-    
-    return ""
-
+            return random.choice(proxy_list)
+    return os.getenv("YOUTUBE_PROXY", "")
 
 @app.post("/extract")
 async def extract_video(request: VideoRequest):
-    logger.info(f"Received extraction request for: {request.url}")
-
+    logger.info(f"Extracting: {request.url}")
     try:
         video_id = parse_video_id(request.url)
+        if not video_id:
+            raise HTTPException(status_code=400, detail="Invalid YouTube URL")
+
         proxy = get_random_proxy()
         cookies = os.getenv("YOUTUBE_COOKIE")
+        proxy_dict = {"http": proxy, "https": proxy} if proxy else None
 
-        # Set up yt-dlp options
-        ydl_opts = {
-            'quiet': True,
-            'no_warnings': True,
-            'skip_download': True,
-            'extractor_args': {'youtube': {'player_client': ['android']}},
-            'youtube_include_dash_manifest': False,
-        }
-
-        if proxy:
-            ydl_opts['proxy'] = proxy
-        if cookies:
-            ydl_opts['http_headers'] = {'Cookie': cookies}
-
-        transcript_text = ""
+        # 1. Metadata via yt-dlp
         metadata = {"title": "YouTube Video", "thumbnail": ""}
-        errors = []
-
-        # ATTEMPT 1: Get metadata via yt-dlp
         try:
+            ydl_opts = {'quiet': True, 'skip_download': True}
+            if proxy:
+                ydl_opts['proxy'] = proxy
+            if cookies:
+                ydl_opts['http_headers'] = {'Cookie': cookies}
+
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(request.url, download=False)
                 metadata = {
@@ -91,43 +73,39 @@ async def extract_video(request: VideoRequest):
                     "uploader": info.get('uploader', 'Unknown Author')
                 }
                 logger.info("yt-dlp metadata OK")
-        except Exception as ytdlp_error:
-            errors.append(f"yt-dlp: {str(ytdlp_error)}")
+        except:
+            logger.warning("yt-dlp metadata failed, using defaults")
 
-        # ATTEMPT 2: Get transcript via youtube_transcript_api
-        proxy_dict = {"http": proxy, "https": proxy} if proxy else None
-        
+        # 2. Transcript via absolute module call (Bypasses any naming conflicts)
+        transcript_text = ""
         try:
-            # First try the official static method (works for most public videos)
-            t_data = YouTubeTranscriptApi.get_transcript(video_id, proxies=proxy_dict)
+            # We call the module's helper class specifically
+            t_data = youtube_transcript_api.YouTubeTranscriptApi.get_transcript(video_id, proxies=proxy_dict)
             transcript_text = " ".join([t['text'] for t in t_data])
-            logger.info(f"Transcript fetched OK via get_transcript")
-        except Exception as e1:
-            errors.append(f"get_transcript: {str(e1)}")
-            
-            # Fallback to list_transcripts (better for auto-generated/multilingual)
+            logger.info("Success: get_transcript")
+        except Exception as e:
+            logger.warning(f"get_transcript failed: {str(e)}")
             try:
-                transcript_list = YouTubeTranscriptApi.list_transcripts(video_id, proxies=proxy_dict)
-                transcript = transcript_list.find_transcript(['en'])
+                # Fallback to the other static helper
+                t_list = youtube_transcript_api.YouTubeTranscriptApi.list_transcripts(video_id, proxies=proxy_dict)
+                transcript = t_list.find_transcript(['en'])
                 t_data = transcript.fetch()
                 transcript_text = " ".join([t['text'] for t in t_data])
-                logger.info(f"Transcript fetched OK via list_transcripts")
+                logger.info("Success: list_transcripts")
             except Exception as e2:
-                errors.append(f"list_transcripts: {str(e2)}")
-
-        if not transcript_text:
-            error_summary = " | ".join(errors)
-            # Custom status for bot detection / rate limit
-            if "Too Many Requests" in error_summary or "429" in error_summary or "Sign in" in error_summary:
-                raise HTTPException(status_code=429, detail="Sign-in required / Bot detected. Check Cookie and Proxy.")
-            raise Exception(f"No transcript found. Errors: {error_summary}")
+                logger.error(f"Everything failed: {str(e2)}")
+                # Classification of error
+                err_str = str(e2)
+                if "429" in err_str or "Too Many Requests" in err_str or "Sign in" in err_str:
+                    raise HTTPException(status_code=429, detail="YouTube Rate Limit (429) or Bot Detected.")
+                
+                raise Exception(f"Failed to find transcript. Errors: {str(e)} | {err_str}")
 
         return {"metadata": metadata, "transcript": transcript_text}
 
     except HTTPException as h_err:
         raise h_err
     except Exception as e:
-        logger.error(f"Extraction failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
