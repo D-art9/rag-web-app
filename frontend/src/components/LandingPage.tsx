@@ -4,7 +4,8 @@ import LoadingScreen from './LoadingScreen';
 
 interface LandingPageProps {
   onUrlSubmit: (url: string, id: string) => void;
-  onNavigate: (view: 'landing' | 'chat' | 'dataflow' | 'contact') => void;
+  // FIX: Prop type now matches App.tsx's full View union (includes 'study')
+  onNavigate: (view: 'landing' | 'chat' | 'dataflow' | 'contact' | 'study') => void;
 }
 
 const styles: { [key: string]: React.CSSProperties } = {
@@ -523,9 +524,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onUrlSubmit, onNavigate }) =>
                 )}
 
                 <div className="fade-in" style={{ ...styles.heroMetrics, animationDelay: '0.4s' }}>
-                  <div style={styles.metricItem}><strong>10,240+</strong> Videos Processed</div>
+                  <div style={styles.metricItem}><strong>Open Source</strong> Fully Transparent</div>
                   <div style={styles.metricDivider}></div>
-                  <div style={styles.metricItem}><strong>98.4%</strong> Analysis Accuracy</div>
+                  <div style={styles.metricItem}><strong>RAG-Powered</strong> Semantic Search</div>
                 </div>
               </div>
 
@@ -573,8 +574,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onUrlSubmit, onNavigate }) =>
 
               {/* Feature 3: LLM Integration (Small) */}
               <div className="glass-card bento-item bento-1x1 card-glow" style={styles.bentoContent}>
-                <h3 style={styles.bentoTitle}>GPT-4o Powered</h3>
-                <p style={styles.bentoDesc}>Advanced reasoning for complex summary generation.</p>
+                <h3 style={styles.bentoTitle}>Llama 3 Powered (Groq)</h3>
+                <p style={styles.bentoDesc}>Lightning-fast inference using Llama 3.3 70B via the Groq API for complex summary generation.</p>
               </div>
 
               {/* Feature 4: Progress (Wide) */}
@@ -672,7 +673,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onUrlSubmit, onNavigate }) =>
                 <p style={styles.storyText}>
                   Building RAG is easy. Building <em>accurate</em> RAG is incredibly hard. Our biggest hurdle wasn't the code—it was the <strong>Signal-to-Noise Ratio</strong>.
                   <br /><br />
-                  Early versions of ScriptYT were too eager, hallucinating answers when it couldn't find facts. We spent weeks tuning our <strong>Vector Confidence Threshold</strong> (settling on a precise 0.15) and optimizing our chunking strategy (800 chars) to ensure the AI knows exactly when to say "I don't know."
+                  Early versions of ScriptYT were too eager, hallucinating answers when it couldn't find facts. We spent weeks tuning our <strong>Vector Confidence Threshold</strong> (settling on a precise 0.08) and optimizing our chunking strategy (1000 chars) to ensure the AI knows exactly when to say "I don't know."
                 </p>
               </div>
 

@@ -24,8 +24,11 @@ const useWebSocket = (url: string) => {
     }, [url]);
 
     const sendMessage = (message: string) => {
-        if (socketRef.current) {
+        // FIX: Check readyState before sending — socket.send() throws if not OPEN
+        if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
             socketRef.current.send(message);
+        } else {
+            console.warn('[WS] Cannot send message — WebSocket is not open');
         }
     };
 

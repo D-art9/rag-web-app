@@ -4,6 +4,7 @@ import Chat from './components/Chat';
 import Dataflow from './components/Dataflow';
 import ContactPage from './components/ContactPage';
 import StudyChat from './components/StudyChat';
+import './index.css';
 
 type View = 'landing' | 'chat' | 'dataflow' | 'contact' | 'study';
 
@@ -15,12 +16,10 @@ const App: React.FC = () => {
   const [studyContext, setStudyContext] = useState<string>('');
 
   const handleUrlSubmit = (url: string, id: string) => {
-    // 1. Start Zoom Animation
     setIsZooming(true);
     setVideoUrl(url);
     setVideoId(id);
 
-    // 2. Wait for animation, then switch view
     setTimeout(() => {
       setCurrentView('chat');
       setIsZooming(false);
@@ -29,9 +28,6 @@ const App: React.FC = () => {
 
   const handleNavigate = (view: View) => {
     setCurrentView(view);
-    if (view !== 'chat') {
-      // logic if needed
-    }
   };
 
   const handleExportToStudy = (content: string) => {
@@ -41,7 +37,6 @@ const App: React.FC = () => {
 
   return (
     <div className="app-root">
-      {/* Landing Page with Zoom Exit Class */}
       {currentView === 'landing' && (
         <div className={isZooming ? 'zoom-out-exit' : ''} style={{ width: '100%', height: '100%' }}>
           <LandingPage onUrlSubmit={handleUrlSubmit} onNavigate={handleNavigate} />
@@ -110,26 +105,5 @@ const styles: { [key: string]: React.CSSProperties } = {
     cursor: 'pointer',
   }
 };
-
-// Inject CSS for Zoom Transition
-const styleSheet = document.createElement("style");
-styleSheet.innerText = `
-  @keyframes zoomOutExit {
-    0% { transform: scale(1); opacity: 1; filter: blur(0px); }
-    100% { transform: scale(1.5); opacity: 0; filter: blur(10px); }
-  }
-  @keyframes zoomInEnter {
-    0% { transform: scale(0.95); opacity: 0; filter: blur(10px); }
-    100% { transform: scale(1); opacity: 1; filter: blur(0px); }
-  }
-  .zoom-out-exit {
-    animation: zoomOutExit 0.8s forwards cubic-bezier(0.22, 1, 0.36, 1);
-    pointer-events: none;
-  }
-  .zoom-in-enter {
-    animation: zoomInEnter 0.6s forwards cubic-bezier(0.22, 1, 0.36, 1);
-  }
-`;
-document.head.appendChild(styleSheet);
 
 export default App;

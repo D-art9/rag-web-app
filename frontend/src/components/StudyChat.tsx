@@ -48,15 +48,18 @@ const StudyChat: React.FC<StudyChatProps> = ({ initialContext, onBack }) => {
         if (!chatInput.trim()) return;
 
         const userText = chatInput;
-        setChatInput(''); // Clear input immediately
+        setChatInput('');
 
         // Optimistic update
         const newUserMsg = { sender: 'user' as const, text: userText };
-        setChatMessages(prev => [...prev, newUserMsg]);
+        // FIX: Include the new message in the history we build BEFORE calling setState.
+        // Otherwise the API never sees the user's latest question (stale closure bug).
+        const updatedMessages = [...chatMessages, newUserMsg];
+        setChatMessages(updatedMessages);
 
         try {
             const history = chatMessages.map(m => ({
-                role: m.sender,
+                role: m.sender, // 'user' or 'ai'
                 parts: m.text
             }));
 

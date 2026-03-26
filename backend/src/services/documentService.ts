@@ -1,6 +1,7 @@
 import DocumentModel from '../models/Document';
 import { transcriptService } from './transcriptService';
 import { getVectorDBClient } from '../vectordb/client';
+import mongoose from 'mongoose';
 
 // Standard Document Type
 export interface Document {
@@ -10,9 +11,6 @@ export interface Document {
     metadata?: any;
 }
 
-/**
- * Chunk transcript into smaller pieces for embedding
- */
 /**
  * Chunk transcript into smaller pieces for embedding.
  * Uses a robust strategy: Sentences -> Words -> Characters to ensure chunks fit within limits.
@@ -28,7 +26,6 @@ function chunkTranscript(transcript: string, maxChunkSize: number = 1000): { tex
 
     let start = 0;
     while (start < cleanText.length) {
-        // Calculate potential end position
         let end = start + maxChunkSize;
 
         if (end >= cleanText.length) {
@@ -36,21 +33,17 @@ function chunkTranscript(transcript: string, maxChunkSize: number = 1000): { tex
             break;
         }
 
-        // Try to find a sentence break (.!?) near the end
         let breakPoint = -1;
-        const lookBackWindow = Math.min(200, maxChunkSize / 2); // Look back 200 chars
+        const lookBackWindow = Math.min(200, maxChunkSize / 2);
         const chunkSlice = cleanText.slice(end - lookBackWindow, end);
 
-        // Prioritize explicit sentence endings
         const sentenceMatch = chunkSlice.lastIndexOf('.');
         if (sentenceMatch !== -1) {
             breakPoint = end - lookBackWindow + sentenceMatch + 1;
         } else {
-            // Fallback: Try to break at the last space
             breakPoint = cleanText.lastIndexOf(' ', end);
         }
 
-        // If no valid break point found (extremely long word?), just hard break
         if (breakPoint <= start) {
             breakPoint = end;
         }
@@ -77,29 +70,19 @@ class DocumentService {
     async uploadDocument(url: string): Promise<Document> {
         try {
             console.log(`[DOCUMENT_SERVICE] Starting upload for: ${url}`);
-            console.log(`[DOCUMENT_SERVICE] Fetching transcript and metadata in parallel...`);
 
-            // Fetch both transcript and metadata
-            const [transcript, metadata] = await Promise.all([
-                transcriptService.extractTranscript(url),
-                transcriptService.getVideoMetadata(url)
-            ]);
+            // FIX: Single call to microservice instead of two parallel calls
+            const { transcript, title, thumbnail } = await transcriptService.extractAll(url);
 
-            console.log(`[DOCUMENT_SERVICE] ✓ Both transcript and metadata received`);
+            console.log(`[DOCUMENT_SERVICE] ✓ Transcript and metadata received`);
             console.log(`[DOCUMENT_SERVICE] Transcript length: ${transcript.length} chars`);
-            console.log(`[DOCUMENT_SERVICE] Metadata title: "${metadata.title}"`);
+            console.log(`[DOCUMENT_SERVICE] Metadata title: "${title}"`);
             console.log(`[DOCUMENT_SERVICE] Saving to MongoDB...`);
 
             // Save to MongoDB
-            const savedDoc = await DocumentModel.create({
-                url,
-                title: metadata.title,
-                thumbnail: metadata.thumbnail,
-                transcript
-            });
+            const savedDoc = await DocumentModel.create({ url, title, thumbnail, transcript });
 
             console.log(`[STORAGE] ✓ Document ${savedDoc._id} saved to MongoDB.`);
-            console.log(`[STORAGE] ✓ Title: ${metadata.title}`);
 
             // Generate and store embeddings in vector DB
             console.log(`[DOCUMENT_SERVICE] Chunking transcript for embeddings...`);
@@ -110,11 +93,7 @@ class DocumentService {
             await vectorDB.storeVideoEmbeddings(
                 savedDoc._id.toString(),
                 chunks,
-                {
-                    title: metadata.title,
-                    url: savedDoc.url,
-                    thumbnail: metadata.thumbnail
-                }
+                { title, url: savedDoc.url, thumbnail }
             );
 
             console.log(`[DOCUMENT_SERVICE] ✓ Upload complete!`);
@@ -130,54 +109,45 @@ class DocumentService {
         }
     }
 
-    /**
-     * Performs semantic search using vector database.
-     * @param query - The search query
-     * @param videoId - Optional video ID to filter search to a specific video
-     */
     async searchDocuments(query: string, videoId?: string): Promise<any[]> {
         try {
             console.log(`[SEARCH] Performing vector search for: "${query}"${videoId ? ` (videoId: ${videoId})` : ' (ALL videos)'}`);
 
             const vectorDB = getVectorDBClient();
-
-            // Perform semantic search using embeddings
             const results = await vectorDB.search(query, videoId, 5);
 
             console.log(`[SEARCH] ✓ Vector search returned ${results.length} results`);
-
             return results;
         } catch (error) {
             console.error('[SEARCH] ✗ Vector search error:', error);
             console.log('[SEARCH] Falling back to keyword search...');
-
-            // Fallback to keyword search if vector DB fails
             return this.keywordSearch(query, videoId);
         }
     }
 
-    /**
-     * Fallback keyword search (used if vector DB fails)
-     */
     private async keywordSearch(query: string, videoId?: string): Promise<any[]> {
         try {
             console.log(`[SEARCH] Using keyword fallback for: "${query}"`);
 
-            const filter = videoId ? { _id: videoId } : {};
-            const docs = await DocumentModel.find(filter);
-
-            if (docs.length === 0) {
-                return [];
+            // FIX: Properly convert string to ObjectId for MongoDB _id queries
+            let filter: any = {};
+            if (videoId) {
+                try {
+                    filter = { _id: new mongoose.Types.ObjectId(videoId) };
+                } catch {
+                    console.warn(`[SEARCH] Invalid videoId format: ${videoId}, searching all docs`);
+                }
             }
+
+            const docs = await DocumentModel.find(filter);
+            if (docs.length === 0) return [];
 
             const results: any[] = [];
 
             for (const doc of docs) {
                 const rawChunks = doc.transcript.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [doc.transcript];
-
                 for (const rawChunk of rawChunks) {
                     const subChunks = rawChunk.match(/.{1,1000}(?:\s|$)/g) || [rawChunk];
-
                     for (const chunk of subChunks) {
                         if (chunk.toLowerCase().includes(query.toLowerCase())) {
                             results.push({
@@ -196,15 +166,11 @@ class DocumentService {
             return [];
         }
     }
-
-    private generateId(): string {
-        return Math.random().toString(36).substr(2, 9);
-    }
 }
 
 const documentServiceInstance = new DocumentService();
 
-// Exporting named function to match retriever.ts expectations
 export const searchDocuments = (query: string, videoId?: string) =>
     documentServiceInstance.searchDocuments(query, videoId);
+
 export default documentServiceInstance;

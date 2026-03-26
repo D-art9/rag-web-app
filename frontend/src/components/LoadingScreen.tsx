@@ -8,13 +8,14 @@ interface LoadingScreenProps {
 const STEPS = [
     { text: "Initializing connection...", threshold: 10 },
     { text: "Resolving YouTube URL...", threshold: 20 },
-    { text: "Downloading video content...", threshold: 40 },
-    { text: "Extracting audio track...", threshold: 50 },
-    { text: "Transcribing with Whisper...", threshold: 70 },
-    { text: "Generating vector embeddings...", threshold: 85 },
+    { text: "Connecting to extractor service...", threshold: 35 },
+    { text: "Extracting transcript...", threshold: 50 },
+    { text: "Parsing transcript data...", threshold: 65 },
+    { text: "Generating vector embeddings...", threshold: 80 },
     { text: "Indexing knowledge base...", threshold: 90 },
     { text: "Finalizing pipeline...", threshold: 95 }
 ];
+
 
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ isFinished, onAnimationComplete }) => {
     const [progress, setProgress] = useState(0);

@@ -32,3 +32,9 @@ Thumbs.db
 # User Uploads
 uploads/
 temp/
+
+# Vector store — large file, rebuilt on deploy, causes merge conflicts
+vector_store.json
+
+# Temporary subtitle/transcript files
+*.vtt

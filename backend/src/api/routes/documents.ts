@@ -1,12 +1,16 @@
 import express from 'express';
-import { uploadDocument, getDocuments } from '../controllers/documentController';
+import { uploadDocument, getDocuments, getDocument, deleteDocument } from '../controllers/documentController';
 
 const router = express.Router();
 
-// Route to upload a document
+// Upload a YouTube video URL for analysis
 router.post('/upload', uploadDocument);
 
-// Route to get all documents
+// Get all analyzed documents
 router.get('/', getDocuments);
+
+// FIX: Mount previously dead-code routes
+router.get('/:id', getDocument);
+router.delete('/:id', deleteDocument);
 
 export default router;

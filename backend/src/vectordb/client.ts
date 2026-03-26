@@ -21,35 +21,45 @@ interface VectorEntry {
  */
 export class VectorDBClient {
     private embeddingModel: any = null;
-    private loadingPromise: Promise<any> | null = null; // Lock for concurrent loading
+    private loadingPromise: Promise<any> | null = null;
     private vectors: VectorEntry[] = [];
     private readonly storePath: string;
+    private isReady: boolean = false;
 
     constructor() {
         this.storePath = path.resolve(__dirname, '../../vector_store.json');
-        this.loadVectors();
+        // FIX: Do NOT load synchronously in constructor — moved to connect()
     }
 
     /**
-     * Load vectors from disk
+     * FIX: Load vectors asynchronously during connect() — no longer blocks startup.
      */
-    private loadVectors() {
+    async connect(): Promise<void> {
+        await this.loadVectors();
+        this.isReady = true;
+        console.log(`[VECTORDB] ✓ File-based vector store ready (${this.vectors.length} vectors loaded)`);
+    }
+
+    /**
+     * Async vector load from disk
+     */
+    private async loadVectors(): Promise<void> {
         try {
             if (fs.existsSync(this.storePath)) {
-                const data = fs.readFileSync(this.storePath, 'utf-8');
+                const data = await fs.promises.readFile(this.storePath, 'utf-8');
                 this.vectors = JSON.parse(data);
                 console.log(`[VECTORDB] Loaded ${this.vectors.length} vectors from disk`);
             }
         } catch (error) {
-            console.error('[VECTORDB] Error loading vectors:', error);
+            console.error('[VECTORDB] Error loading vectors from disk:', error);
             this.vectors = [];
         }
     }
 
     /**
-     * Save vectors to disk
+     * Save vectors to disk (sync write kept for simplicity during mutation)
      */
-    private saveVectors() {
+    private saveVectors(): void {
         try {
             fs.writeFileSync(this.storePath, JSON.stringify(this.vectors, null, 2));
         } catch (error) {
@@ -61,13 +71,9 @@ export class VectorDBClient {
      * Initialize the embedding model (Singleton with Race Condition Fix)
      */
     private async initEmbeddingModel(): Promise<any> {
-        // 1. If loaded, return immediately
         if (this.embeddingModel) return this.embeddingModel;
-
-        // 2. If already loading, return the existing promise
         if (this.loadingPromise) return this.loadingPromise;
 
-        // 3. Start loading
         console.log('[VECTORDB] Loading embedding model (all-MiniLM-L6-v2)...');
         this.loadingPromise = (async () => {
             try {
@@ -77,7 +83,7 @@ export class VectorDBClient {
                 return model;
             } catch (error) {
                 console.error('[VECTORDB] Failed to load embedding model:', error);
-                this.loadingPromise = null; // Reset on failure so we can try again
+                this.loadingPromise = null;
                 throw error;
             }
         })();
@@ -95,7 +101,7 @@ export class VectorDBClient {
     }
 
     /**
-     * Calculate cosine similarity between two vectors
+     * FIX: Cosine similarity with zero-vector guard to prevent NaN results
      */
     private cosineSimilarity(a: number[], b: number[]): number {
         let dotProduct = 0;
@@ -108,18 +114,14 @@ export class VectorDBClient {
             normB += b[i] * b[i];
         }
 
+        // FIX: Guard against division by zero (zero-vector embeddings)
+        if (normA === 0 || normB === 0) return 0;
+
         return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
     }
 
     /**
-     * Connect (no-op for file-based storage)
-     */
-    async connect(): Promise<void> {
-        console.log('[VECTORDB] ✓ File-based vector store ready');
-    }
-
-    /**
-     * Store embeddings for a video
+     * Store embeddings for a video, tracking failures clearly
      */
     async storeVideoEmbeddings(
         videoId: string,
@@ -128,8 +130,9 @@ export class VectorDBClient {
     ): Promise<void> {
         console.log(`[VECTORDB] Generating embeddings for ${chunks.length} chunks (videoId: ${videoId})...`);
 
-        // Process in batches to improve speed while avoiding OOM
         const BATCH_SIZE = 8;
+        let successCount = 0;
+        let failedCount = 0;
 
         for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
             const batch = chunks.slice(i, i + BATCH_SIZE);
@@ -149,14 +152,28 @@ export class VectorDBClient {
                         embedding,
                         metadata
                     });
+                    successCount++;
                 } catch (err) {
+                    // FIX: Count failures so caller is aware of partial success
+                    failedCount++;
                     console.error(`[VECTORDB] Failed to embed chunk ${chunk.index}:`, err);
                 }
             }));
         }
 
-        this.saveVectors();
-        console.log(`[VECTORDB] ✓ Stored ${chunks.length} embeddings for video: ${metadata.title}`);
+        // FIX: Only save if at least some chunks succeeded; warn on partial failure
+        if (successCount > 0) {
+            this.saveVectors();
+            console.log(`[VECTORDB] ✓ Stored ${successCount}/${chunks.length} embeddings for video: "${metadata.title}"`);
+        }
+
+        if (failedCount > 0) {
+            console.warn(`[VECTORDB] ⚠️ ${failedCount}/${chunks.length} chunks failed to embed. Search quality may be reduced.`);
+        }
+
+        if (successCount === 0) {
+            throw new Error(`[VECTORDB] All ${chunks.length} chunks failed to embed. Vector store NOT saved.`);
+        }
     }
 
     /**
@@ -169,10 +186,8 @@ export class VectorDBClient {
     ): Promise<Array<{ content: string; metadata: any; score: number }>> {
         console.log(`[VECTORDB] Searching for: "${query}"${videoId ? ` (videoId: ${videoId})` : ''}`);
 
-        // Generate query embedding
         const queryEmbedding = await this.generateEmbedding(query);
 
-        // Filter by videoId if provided
         let candidates = this.vectors;
         if (videoId) {
             candidates = this.vectors.filter(v => v.videoId === videoId);
@@ -183,7 +198,6 @@ export class VectorDBClient {
             return [];
         }
 
-        // Calculate similarities
         const results = candidates.map(vector => ({
             content: vector.text,
             metadata: {
@@ -196,7 +210,6 @@ export class VectorDBClient {
             score: this.cosineSimilarity(queryEmbedding, vector.embedding)
         }));
 
-        // Sort by score and return top K
         results.sort((a, b) => b.score - a.score);
         const topResults = results.slice(0, topK);
 
@@ -206,14 +219,12 @@ export class VectorDBClient {
     }
 
     /**
-     * Delete embeddings for a video
+     * Delete embeddings for a specific video
      */
     async deleteVideoEmbeddings(videoId: string): Promise<void> {
         console.log(`[VECTORDB] Deleting embeddings for videoId: ${videoId}`);
-
         this.vectors = this.vectors.filter(v => v.videoId !== videoId);
         this.saveVectors();
-
         console.log(`[VECTORDB] ✓ Deleted embeddings for videoId: ${videoId}`);
     }
 

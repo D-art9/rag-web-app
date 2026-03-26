@@ -10,7 +10,7 @@ interface ChatProps {
     onExportToStudy?: (content: string) => void;
 }
 
-// ... props
+
 
 interface Message {
     text: string;
@@ -134,26 +134,31 @@ const Chat: React.FC<ChatProps> = ({ videoUrl, videoId, onSelectVideo, onExportT
         setMessages(prev => [...prev, userMsg]);
         setInput('');
 
-        try {
-            // 2. Add AI Placeholder (Typing state implicitly handled by Typewriter component when message is added)
-            // But we wait for response first usually. 
-            // Better UX: Show "Thinking..." or just wait. 
-            // Let's wait for response then stream it.
+        // FIX: Show a visible 'Thinking...' placeholder while awaiting the LLM response
+        const thinkingMsg: Message = { text: '...', sender: 'ai', isTyping: false };
+        setMessages(prev => [...prev, thinkingMsg]);
 
+        try {
             const response = await sendMessage(textToSend, videoId);
 
-            setMessages(prev => [...prev, {
-                text: response.answer,
-                sender: 'ai',
-                sources: response.sources,
-                isTyping: true // Mark as needing typing effect
-            }]);
-
+            // Replace the thinking placeholder with the real answer
+            setMessages(prev => [
+                ...prev.slice(0, -1),
+                {
+                    text: response.answer,
+                    sender: 'ai',
+                    sources: response.sources,
+                    isTyping: true
+                }
+            ]);
         } catch (err) {
-            setMessages(prev => [...prev, {
-                text: "Sorry, I encountered an error processing your request. Please try again.",
-                sender: 'ai'
-            }]);
+            setMessages(prev => [
+                ...prev.slice(0, -1),
+                {
+                    text: 'Sorry, I encountered an error processing your request. Please try again.',
+                    sender: 'ai'
+                }
+            ]);
         }
     };
 
@@ -536,52 +541,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     }
 };
 
-// Add styles for markdown content and animations
-const styleSheet = document.createElement("style");
-styleSheet.innerText = `
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-  .history-item:hover {
-      background: rgba(255,255,255,0.03);
-  }
-  .slide-in-right {
-      animation: slideInRight 0.3s ease-out;
-  }
-  .slide-in-left {
-      animation: slideInLeft 0.3s ease-out;
-  }
-  @keyframes slideInRight {
-      from { opacity: 0; transform: translateX(20px); }
-      to { opacity: 1; transform: translateX(0); }
-  }
-  @keyframes slideInLeft {
-      from { opacity: 0; transform: translateX(-20px); }
-      to { opacity: 1; transform: translateX(0); }
-  }
-  /* Markdown Styles */
-  .markdown-content p {
-      margin-bottom: 0.5rem;
-  }
-  .markdown-content p:last-child {
-      margin-bottom: 0;
-  }
-  .markdown-content strong {
-      color: var(--accent-color);
-      font-weight: 700;
-  }
-  .markdown-content ul, .markdown-content ol {
-      padding-left: 1.2rem;
-      margin-bottom: 0.5rem;
-  }
-  .markdown-content code {
-      background: rgba(0,0,0,0.3);
-      padding: 0.2rem 0.4rem;
-      borderRadius: 4px;
-      font-family: monospace;
-      font-size: 0.9em;
-  }
-`;
-document.head.appendChild(styleSheet);
+// All styles have been moved to index.css — no more inline injection.
 
 export default Chat;
