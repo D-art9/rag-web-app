@@ -5,7 +5,8 @@ import { sendMessage } from '../services/api';
 
 interface ChatProps {
     videoUrl: string;
-    videoId: string;
+    videoId: string; // This is the Document ID for search
+    ytId: string;    // This is the actual YouTube ID for thumbnail
     onExportToStudy?: (content: string) => void;
 }
 
@@ -15,7 +16,7 @@ interface Message {
     sources?: string[];
 }
 
-const Chat: React.FC<ChatProps> = ({ videoId, onExportToStudy }) => {
+const Chat: React.FC<ChatProps> = ({ videoId, ytId, onExportToStudy }) => {
     const [messages, setMessages] = useState<Message[]>([
         { text: "ANALYZE_COMPLETED: SYSTEM_READY_FOR_QUERY", sender: 'ai' }
     ]);
@@ -56,22 +57,33 @@ const Chat: React.FC<ChatProps> = ({ videoId, onExportToStudy }) => {
                 </div>
                 
                 <div className="pane-content">
-                    <img 
-                        src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`} 
-                        alt="YOUTUBE_SOURCE" 
-                        style={{ width: '100%', border: '1px solid var(--border-color)', marginBottom: '1rem' }}
-                    />
+                    {ytId ? (
+                        <div style={{ position: 'relative', width: '100%', border: '1px solid var(--border-color)', marginBottom: '1rem', background: '#000' }}>
+                            <img 
+                                src={`https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`} 
+                                alt="YOUTUBE_SOURCE" 
+                                style={{ width: '100%', display: 'block' }}
+                                onError={(e) => {
+                                    (e.target as any).src = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+                                }}
+                            />
+                            <div className="img-overlay">SOURCE_FRAME_LOCKED</div>
+                        </div>
+                    ) : (
+                        <div className="empty-thumb">[NO_SOURCE_FRAME]</div>
+                    )}
                     
                     <div className="system-data">
                         <p className="system-label">&gt; VIDEO_ID_STREAM:</p>
-                        <p className="system-value mono">{videoId}</p>
+                        <p className="system-value mono">{ytId || '0xUNKNOWN'}</p>
                         
-                        <p className="system-label">&gt; KEY_SEGMENTS_MAP:</p>
+                        <p className="system-label">&gt; DOC_ID_CONTEXT:</p>
+                        <p className="system-value mono" style={{ fontSize: '0.6rem', color: 'var(--muted-color)' }}>{videoId}</p>
+                        
+                        <p className="system-label">&gt; SYSTEM_READY:</p>
                         <div className="mini-grid">
-                            <span>[SUMMARY]</span>
-                            <span>[CONCEPTS]</span>
                             <span>[ANALYSIS]</span>
-                            <span>[TRANSC]</span>
+                            <span>[SYNC]</span>
                         </div>
                     </div>
 
@@ -127,15 +139,11 @@ const Chat: React.FC<ChatProps> = ({ videoId, onExportToStudy }) => {
             </main>
 
             <style>{`
-                .terminal-dashboard {
-                    display: grid;
-                    grid-template-columns: 320px 1fr;
-                    gap: 1rem;
-                    height: 100%;
-                }
-
+                .terminal-dashboard { display: grid; grid-template-columns: 320px 1fr; gap: 1rem; height: 100%; border-top: 1px solid var(--border-color); }
                 .pane { display: flex; flex-direction: column; height: 100%; }
                 .pane-content { padding: 1.5rem; flex-grow: 1; overflow-y: auto; }
+                
+                .img-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: var(--primary-color); font-size: 0.6rem; padding: 2px 10px; }
 
                 .system-data { margin-top: 1rem; }
                 .system-label { font-size: 0.6rem; color: var(--muted-color); font-weight: bold; }
@@ -146,48 +154,17 @@ const Chat: React.FC<ChatProps> = ({ videoId, onExportToStudy }) => {
                    grid-template-columns: 1fr 1fr;
                    gap: 0.2rem;
                    font-size: 0.6rem;
-                   margin-bottom: 2rem;
                 }
 
-                /* SHELL CHAT */
-                .shell-flow {
-                    flex-grow: 1;
-                    padding: 1.5rem;
-                    overflow-y: auto;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 1.2rem;
-                }
-
-                .shell-msg { display: flex; gap: 0.5rem; align-items: flex-start; }
+                .shell-flow { flex-grow: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.2rem; }
+                .shell-msg { display: flex; gap: 0.5rem; }
                 .msg-prompt { color: var(--secondary-color); font-weight: bold; flex-shrink: 0; }
                 .msg-content { font-size: 0.9rem; line-height: 1.4; color: var(--primary-color); }
-                .msg-content p { display: inline; }
-                
-                .msg-sources {
-                    display: block;
-                    font-size: 0.7rem;
-                    color: var(--muted-color);
-                    margin-top: 0.5rem;
-                }
+                .msg-sources { font-size: 0.7rem; color: var(--muted-color); margin-top: 0.5rem; }
 
-                .shell-input-area {
-                    padding: 1rem 1.5rem;
-                    border-top: 1px dashed var(--border-color);
-                }
-
-                .input-prompt {
-                    display: flex;
-                    gap: 0.5rem;
-                    align-items: center;
-                }
-                
-                .input-prompt input {
-                    flex-grow: 1;
-                    background: transparent;
-                    border: none;
-                    outline: none;
-                }
+                .shell-input-area { padding: 1rem 1.5rem; border-top: 1px dashed var(--border-color); }
+                .input-prompt { display: flex; gap: 0.5rem; align-items: center; }
+                .term-input { flex-grow: 1; color: var(--primary-color); background: transparent; border: none; outline: none; }
 
                 @media (max-width: 900px) {
                   .terminal-dashboard { grid-template-columns: 1fr; }
