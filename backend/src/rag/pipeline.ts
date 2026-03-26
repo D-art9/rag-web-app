@@ -31,13 +31,20 @@ export const ragPipeline = {
 
             // 2. Build the augmented prompt
             const contextText = chunks.map(c => c.content).join('\n\n');
-            const augmentedPrompt = `
-Context information is below.
+            const augmentedPrompt = `You are a helpful assistant. Use ONLY the context provided below to answer the user's question. Do not use prior knowledge or make assumptions beyond what is stated in the context.
+
+Context:
 ---------------------
 ${contextText}
 ---------------------
-Given the context information and not prior knowledge, answer the query.
-Query: ${question}
+
+User Question: ${question}
+
+Instructions:
+- If the answer is found in the context, respond clearly and concisely.
+- If the answer is NOT found in the context, say: "I don't have enough information in the provided context to answer that question."
+- Do not fabricate or infer information beyond what is explicitly stated.
+
 Answer:`;
 
             // 3. Generate the answer
