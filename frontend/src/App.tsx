@@ -105,7 +105,6 @@ const App: React.FC = () => {
               <Chat
                 videoUrl={videoUrl}
                 videoId={videoId || ''}
-                onSelectVideo={handleUrlSubmit}
                 onExportToStudy={handleExportToStudy}
               />
             ) : (
