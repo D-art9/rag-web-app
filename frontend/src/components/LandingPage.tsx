@@ -45,7 +45,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onUrlSubmit, onNavigate }) =>
     <div className="terminal-landing">
       <div className="landing-header">
         <h1 className="heading">{typedHeader}</h1>
-        <p className="subtext">// ANALYZE_YOUTUBE_SOURCE [TARGET_URL_REQUIRED]</p>
+        <p className="subtext">{"// ANALYZE_YOUTUBE_SOURCE [TARGET_URL_REQUIRED]"}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="terminal-form">

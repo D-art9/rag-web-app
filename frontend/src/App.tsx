@@ -12,18 +12,12 @@ const App: React.FC = () => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoId, setVideoId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<View>('landing');
-  const [isZooming, setIsZooming] = useState(false);
   const [studyContext, setStudyContext] = useState<string>('');
 
   const handleUrlSubmit = (url: string, id: string) => {
-    setIsZooming(true);
     setVideoUrl(url);
     setVideoId(id);
-
-    setTimeout(() => {
-      setCurrentView('chat');
-      setIsZooming(false);
-    }, 400); // Shorter transition for terminal
+    setCurrentView('chat');
   };
 
   const navItems = [
@@ -86,7 +80,7 @@ const App: React.FC = () => {
               <span>SCRIPTYT: /root/home</span>
               <span>08:00 AM</span>
             </div>
-            <LandingPage onUrlSubmit={handleUrlSubmit} onNavigate={setCurrentView} />
+            <LandingPage onUrlSubmit={handleUrlSubmit} onNavigate={(v: any) => setCurrentView(v)} />
           </div>
         )}
 
@@ -96,18 +90,33 @@ const App: React.FC = () => {
               <span>SCRIPTYT: /root/dashboard</span>
               <span>01:00 PM</span>
             </div>
-            <Chat
-              videoUrl={videoUrl || ''}
-              videoId={videoId || ''}
-              onExportToStudy={(c) => { setStudyContext(c); setCurrentView('study'); }}
-            />
+            {videoUrl ? (
+              <Chat
+                videoUrl={videoUrl}
+                videoId={videoId || ''}
+                onExportToStudy={(c) => { setStudyContext(c); setCurrentView('study'); }}
+              />
+            ) : (
+                <div className="empty-state pane">
+                    <div className="pane-header">ERROR: [NO_SOURCE]</div>
+                    <div style={{ padding: '2rem' }}>
+                        <p>SOURCE_FILE_NOT_FOUND. PLEASE INITIATE SOURCE ANALYSIS ON /ROOT/HOME.</p>
+                        <button className="term-btn" style={{ marginTop: '1rem' }} onClick={() => setCurrentView('landing')}>GOTO /ROOT/HOME</button>
+                    </div>
+                </div>
+            )}
           </div>
         )}
 
-        {/* Other views following the same pane pattern... */}
         {currentView === 'dataflow' && <Dataflow onBack={() => setCurrentView('landing')} />}
         {currentView === 'contact' && <ContactPage onBack={() => setCurrentView('landing')} />}
-        {currentView === 'study' && <StudyChat initialContext={studyContext} onBack={() => setCurrentView('chat')} />}
+        
+        {currentView === 'study' && (
+          <div className="pane view-pane">
+            <div className="pane-header"><span>SCRIPTYT: /root/study_ai</span></div>
+            <StudyChat initialContext={studyContext} onBack={() => setCurrentView('chat')} />
+          </div>
+        )}
       </main>
 
       <style>{`
@@ -157,6 +166,10 @@ const App: React.FC = () => {
           color: var(--bg-color);
         }
 
+        .shell-item.active {
+          border-left: 4px solid var(--secondary-color);
+        }
+
         .shell-status {
           padding: 1rem;
           border-top: 1px dashed var(--border-color);
@@ -184,8 +197,9 @@ const App: React.FC = () => {
         }
 
         @media (max-width: 800px) {
-          .terminal-root { flex-direction: column; }
+          .terminal-root { flex-direction: column; padding: 0.5rem; }
           .nav-pane { width: 100%; height: auto; }
+          .shell-logo { display: none; }
         }
       `}</style>
     </div>
