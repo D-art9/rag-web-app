@@ -91,7 +91,7 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId, onExportToStudy }) => {
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
                                 {msg.sources && msg.sources.length > 0 && (
                                     <div className="msg-citations">
-                                      // SOURCES: {msg.sources.join(', ')}
+                                      {"// SOURCES: "}{msg.sources.join(', ')}
                                     </div>
                                 )}
                             </div>

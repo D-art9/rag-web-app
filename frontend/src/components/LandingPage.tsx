@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Terminal, Info, Mail } from 'lucide-react';
 
 interface LandingPageProps {
   onUrlSubmit: (url: string, id: string) => void;
@@ -48,7 +47,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onUrlSubmit, onNavigate }) =>
 
   return (
     <div className="bauhaus-landing">
-      {/* HERO SECTION AS A COMPOSITION */}
       <div className="landing-composition">
         <header className="hero-text">
           <h1 className="heading-xl">SCRIPTYT <span className="text-stroke">{typedTitle}</span></h1>
