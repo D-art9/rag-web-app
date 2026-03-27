@@ -123,7 +123,7 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
                     <input 
                         type="text" 
                         className="chat-input-field" 
-                        placeholder="ASK_STUDY_AI_ANYTHING..." 
+                        placeholder="ASK_AI_ANYTHING..." 
                         autoFocus
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
@@ -149,15 +149,16 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
                 .bauhaus-pane {
                     display: flex;
                     flex-direction: column;
-                    background: white;
+                    background: var(--pane-bg);
                     height: 100%;
                     position: relative;
+                    transition: all 0.4s ease;
                 }
 
                 .pane-headline {
                     padding: 1rem 1.5rem;
-                    background: black;
-                    color: white;
+                    background: var(--border-color);
+                    color: var(--pane-bg);
                     font-weight: 900;
                     font-size: 1rem;
                     letter-spacing: 0.1em;
@@ -166,8 +167,8 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
 
                 .expand-toggle-btn {
                     background: none;
-                    border: 2px solid white;
-                    color: white;
+                    border: 2px solid var(--pane-bg);
+                    color: var(--pane-bg);
                     cursor: pointer;
                     display: flex;
                     align-items: center;
@@ -175,27 +176,22 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
                     padding: 4px;
                     transition: all 0.2s;
                 }
-                .expand-toggle-btn:hover { background: white; color: black; }
+                .expand-toggle-btn:hover { background: var(--pane-bg); color: var(--border-color); }
 
                 .pane-content { padding: 2rem; flex-grow: 1; display: flex; flex-direction: column; }
 
                 /* FLOATING THUMB */
                 .floating-source-tag {
-                    position: sticky;
-                    top: 0;
-                    margin-bottom: 2rem;
-                    width: 140px;
-                    background: white;
-                    z-index: 10;
-                    overflow: hidden;
+                    position: sticky; top: 0; margin-bottom: 2rem; width: 140px;
+                    background: var(--pane-bg); z-index: 10; overflow: hidden;
                 }
                 .floating-source-tag img { width: 100%; display: block; filter: grayscale(100%); }
-                .tag-meta { background: black; color: white; font-size: 0.6rem; padding: 4px; font-weight: 900; }
+                .tag-meta { background: var(--border-color); color: var(--pane-bg); font-size: 0.6rem; padding: 4px; font-weight: 900; }
 
                 /* CHAT */
                 .chat-flow { flex-grow: 1; padding: 2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 2rem; }
                 
-                .bauhaus-msg { background: white; max-width: 90%; align-self: flex-start; }
+                .bauhaus-msg { background: var(--pane-bg); color: var(--foreground); max-width: 90%; align-self: flex-start; }
                 .bauhaus-msg.user { align-self: flex-end; border-color: var(--primary-red); }
                 .bauhaus-msg.ai { border-color: var(--primary-blue); }
 
@@ -205,20 +201,18 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
                 
                 .msg-body { padding: 1.5rem; font-weight: 500; font-size: 1.1rem; }
                 .msg-citations { 
-                   margin-top: 1rem; border-top: 2px dashed black; padding-top: 0.5rem;
-                   font-size: 0.7rem; color: #666; font-weight: 900;
+                   margin-top: 1rem; border-top: 2px dashed var(--border-color); padding-top: 0.5rem;
+                   font-size: 0.7rem; color: var(--foreground); opacity: 0.6; font-weight: 900;
                 }
 
-                .tag-bauhaus { padding: 1rem; font-weight: 900; font-size: 0.8rem; background: #eee; }
+                .tag-bauhaus { padding: 1rem; font-weight: 900; font-size: 0.8rem; background: rgba(128,128,128,0.1); }
 
-                .typing-indicator { padding: 1rem; background: #eee; font-weight: 900; width: fit-content; margin: 0 auto; }
+                .typing-indicator { padding: 1rem; background: rgba(128,128,128,0.1); font-weight: 900; width: fit-content; margin: 0 auto; }
 
-                /* INPUT */
-                .chat-input-area { margin: 1rem 2rem 2rem; display: flex; }
-                .chat-input-field { flex-grow: 1; border: none; padding: 1.5rem; font-weight: 900; font-family: inherit; outline: none; }
+                /* INPUT AREA */
+                .chat-input-area { margin: 1rem 2rem 2rem; display: flex; background: var(--pane-bg); }
+                .chat-input-field { flex-grow: 1; border: none; padding: 1.5rem; font-weight: 900; font-family: inherit; outline: none; background: transparent; color: var(--foreground); }
                 .chat-send-btn { border-top: none; border-bottom: none; border-right: none; }
-
-                .full-width { width: 100%; }
 
                 @media (max-width: 1000px) {
                   .bauhaus-chat-layout { grid-template-columns: 1fr !important; }

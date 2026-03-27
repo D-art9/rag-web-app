@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import LandingPage from './components/LandingPage';
 import Chat from './components/Chat';
 import SearchPlayground from './components/SearchPlayground';
 import Dataflow from './components/Dataflow';
 import ContactPage from './components/ContactPage';
-import { Circle, Square, Triangle, Menu, X } from 'lucide-react';
+import { Circle, Square, Triangle, Menu, X, Sun, Moon } from 'lucide-react';
 import './index.css';
 
 type View = 'landing' | 'chat' | 'dataflow' | 'contact' | 'playground';
@@ -15,6 +15,9 @@ const App: React.FC = () => {
   const [ytId, setYtId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<View>('landing');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  const toggleTheme = () => setIsDarkMode(prev => !prev);
 
   const setView = (v: View) => {
     setCurrentView(v);
@@ -52,7 +55,7 @@ const App: React.FC = () => {
   ];
 
   return (
-    <div className={`bauhaus-root ${isMobileMenuOpen ? 'menu-open' : ''}`}>
+    <div className={`bauhaus-root ${isMobileMenuOpen ? 'menu-open' : ''} ${isDarkMode ? 'bauhaus-dark' : ''}`}>
       {/* MOBILE TRIGGER */}
       <button className="mobile-menu-trigger bauhaus-border" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
         {isMobileMenuOpen ? <X size={32}/> : <Menu size={32}/>}
@@ -81,8 +84,13 @@ const App: React.FC = () => {
            ))}
          </div>
 
+         {/* THEME TOGGLE FOOTER */}
          <div className="nav-footer">
-            <div className="status-badge">SYSTEM_v2.0_READY</div>
+            <button className="theme-toggle bauhaus-border bauhaus-shadow-sm" onClick={toggleTheme}>
+                {isDarkMode ? <Sun size={18}/> : <Moon size={18}/>}
+                <span>MODE: {isDarkMode ? 'CONSTRUCT' : 'BLUEPRINT'}</span>
+            </button>
+            <div className="status-badge">v2.1_CORE_ACTIVE</div>
          </div>
       </nav>
 
@@ -129,19 +137,20 @@ const App: React.FC = () => {
           grid-template-columns: 320px 1fr;
           height: 100vh;
           width: 100vw;
-          background: #F0F0F0;
+          background: var(--bg-color);
+          color: var(--foreground);
           overflow: hidden;
           position: relative;
         }
 
         /* NAVIGATION */
         .bauhaus-nav {
-          background: white;
-          border-right: 4px solid black;
+          background: var(--pane-bg);
+          border-right: 4px solid var(--border-color);
           display: flex;
           flex-direction: column;
           z-index: 100;
-          transition: transform 0.3s ease-in-out;
+          transition: transform 0.3s ease-in-out, background 0.4s ease;
         }
 
         .brand-logo {
@@ -149,8 +158,8 @@ const App: React.FC = () => {
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          border-bottom: 4px solid black;
-          background: white;
+          border-bottom: 4px solid var(--border-color);
+          background: var(--pane-bg);
         }
         
         .logo-text { font-weight: 900; font-size: 1.2rem; letter-spacing: -0.05em; margin-left: 0.5rem; }
@@ -166,21 +175,32 @@ const App: React.FC = () => {
           cursor: pointer;
           display: flex;
           flex-direction: column;
+          color: var(--foreground);
           transition: all 0.2s;
           border-bottom: 2px solid transparent;
         }
 
-        .nav-btn:hover { background: #fdfdfd; padding-left: 2.5rem; }
+        .nav-btn:hover { background: rgba(0,0,0,0.02); padding-left: 2.5rem; }
         .nav-btn.active {
           background: var(--accent-color);
           color: white;
-          border-bottom: 4px solid black;
+          border-bottom: 4px solid var(--border-color);
         }
         
         .btn-index { font-weight: 900; font-size: 0.7rem; margin-bottom: 0.1rem; }
         .btn-label { font-weight: 900; font-size: 1.3rem; text-transform: uppercase; }
 
-        .nav-footer { padding: 1.5rem; border-top: 4px solid black; font-weight: 900; font-size: 0.7rem; }
+        .nav-footer { padding: 1.5rem; border-top: 4px solid var(--border-color); display: flex; flex-direction: column; gap: 1rem; }
+        .status-badge { font-weight: 900; font-size: 0.7rem; color: var(--foreground); opacity: 0.5; }
+
+        .theme-toggle {
+            display: flex; align-items: center; gap: 0.5rem; 
+            padding: 0.8rem 1rem; cursor: pointer;
+            background: var(--pane-bg); color: var(--foreground);
+            font-weight: 900; font-size: 0.7rem; text-transform: uppercase;
+            transition: all 0.2s;
+        }
+        .theme-toggle:hover { background: var(--foreground); color: var(--pane-bg); }
 
         /* MOBILE OVERRIDES */
         .mobile-menu-trigger {
@@ -203,12 +223,12 @@ const App: React.FC = () => {
         .viewport-container { padding: 2rem; height: 100%; }
 
         .empty-bauhaus {
-          background: white;
+          background: var(--pane-bg);
           padding: 4rem 2rem;
           max-width: 650px;
           margin: 4rem auto;
           text-align: center;
-          box-shadow: 12px 12px 0px 0px #121212;
+          box-shadow: 12px 12px 0px 0px var(--border-color);
         }
 
         @media (max-width: 900px) {

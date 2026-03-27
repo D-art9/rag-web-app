@@ -52,140 +52,94 @@ const LandingPage: React.FC<LandingPageProps> = ({ onUrlSubmit, onNavigate }) =>
   return (
     <div className="bauhaus-landing">
       <div className="landing-composition">
-        <header className="hero-text">
-          <h1 className="heading-xl">SCRIPTYT <span className="text-stroke">{typedTitle}</span></h1>
-          <p className="subtext-bauhaus">EXTRACT KNOWLEDGE FROM VIDEO SOURCES. MULTIMODAL RAG PIPELINE v2.0</p>
-          
-          <form onSubmit={handleSubmit} className="bauhaus-form">
-            <input
-              type="text"
-              className="bauhaus-input"
-              placeholder="PASTE_YOUTUBE_URL_HERE"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              disabled={isAnalyzing}
-            />
-            <button type="submit" className="btn-bauhaus btn-yellow bauhaus-shadow-sm">
-              {isAnalyzing ? 'WORKING...' : 'ANALYZE_SOURCE'}
-            </button>
-          </form>
-        </header>
+        {/* ASYMMETRIC HEADER SECTION */}
+        <section className="hero-block">
+          <div className="bauhaus-label">SCRIPTYT_v2.1</div>
+          <h1 className="heading-lg main-title">MULTIMODAL_<span className="typed-text">{typedTitle}</span>_</h1>
+          <p className="hero-description">
+            CONSTRUCTIVIST_INTELLIGENCE: 🛰️ GENERATING SEMANTIC INSIGHTS FROM YOUTUBE TRANSCRIPTS AND VISUAL THUMBNAILS VIA GEMINI.
+          </p>
+        </section>
 
-        <aside className="hero-sidebar bauhaus-border btn-red bauhaus-shadow">
-           <div className="sidebar-header">AVAILABLE_COMMANDS</div>
-           <ul className="sidebar-list">
-             <li>/analyze --url=[LINK]</li>
-             <li>/history --view-all</li>
-             <li>/clear --all-cache</li>
-           </ul>
-           <div className="geom-shapes">
-              <div className="shape circle yellow-shape"></div>
-              <div className="shape triangle-up blue-shape"></div>
+        {/* INPUT COMPOSITION */}
+        <section className="input-composition">
+           <form onSubmit={handleSubmit} className="analyzer-form">
+              <div className="input-group bauhaus-border">
+                <input 
+                  type="text" 
+                  className="url-input" 
+                  placeholder="PASTE_YOUTUBE_URL_HERE..."
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                />
+              </div>
+              <button 
+                type="submit" 
+                className="btn-bauhaus btn-red bauhaus-shadow"
+                disabled={isAnalyzing}
+              >
+                {isAnalyzing ? 'SCANN_DATA...' : 'ANALYZE_SOURCE'}
+              </button>
+           </form>
+        </section>
+
+        {/* GEOMETRIC NAVIGATION BLOCKS */}
+        <section className="nav-blocks">
+           <div className="nav-card btn-blue bauhaus-border bauhaus-shadow-sm" onClick={() => onNavigate('playground')}>
+              <div className="card-index">01</div>
+              <div className="card-label">EXPLORE_LIBRARY</div>
            </div>
-        </aside>
+           <div className="nav-card btn-yellow bauhaus-border bauhaus-shadow-sm" onClick={() => onNavigate('dataflow')}>
+              <div className="card-index">02</div>
+              <div className="card-label">DATA_FLOW_MAP</div>
+           </div>
+           <div className="nav-card bauhaus-border bauhaus-shadow-sm" style={{ background: 'white', color: 'black' }} onClick={() => onNavigate('contact')}>
+              <div className="card-index">03</div>
+              <div className="card-label">CONTACT_CONTROL</div>
+           </div>
+        </section>
       </div>
 
       <style>{`
         .bauhaus-landing {
-          padding: 3rem;
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          min-height: 100%; padding: 4rem 2rem;
+          background: var(--bg-color); color: var(--foreground);
+          transition: background 0.4s ease, color 0.4s ease;
         }
 
-        .landing-composition {
-          display: grid;
-          grid-template-columns: 2fr 1fr;
-          gap: 2rem;
-          width: 100%;
-          max-width: 1200px;
+        .landing-composition { max-width: 1000px; width: 100%; display: flex; flex-direction: column; gap: 4rem; }
+
+        .hero-block { border-left: 8px solid var(--primary-red); padding-left: 2rem; }
+        .bauhaus-label { font-weight: 900; color: var(--primary-red); letter-spacing: 0.2em; margin-bottom: 0.5rem; }
+        .main-title { margin: 0; }
+        .typed-text { color: var(--primary-blue); border-right: 4px solid var(--primary-red); padding-right: 4px; animation: blink 0.8s infinite; }
+        .hero-description { max-width: 600px; margin-top: 1.5rem; font-weight: 500; font-size: 1.1rem; line-height: 1.5; opacity: 0.8; }
+
+        @keyframes blink { 50% { border-color: transparent; } }
+
+        /* INPUT */
+        .analyzer-form { display: flex; gap: 1rem; align-items: stretch; }
+        .input-group { flex-grow: 1; display: flex; background: var(--pane-bg); color: var(--foreground); }
+        .url-input { 
+          flex-grow: 1; border: none; padding: 2rem; 
+          font-weight: 900; font-size: 1.2rem; font-family: inherit; 
+          background: transparent; color: inherit; outline: none;
         }
 
-        .hero-text {
-          padding: 2rem 0;
-        }
+        .btn-bauhaus { padding: 0 4rem; font-weight: 900; font-size: 1.2rem; cursor: pointer; text-transform: uppercase; transition: transform 0.1s; }
+        .btn-bauhaus:active { transform: translate(4px, 4px); box-shadow: none; }
 
-        .text-stroke {
-          -webkit-text-stroke: 1.5px black;
-          color: transparent;
-        }
-
-        .subtext-bauhaus {
-          font-weight: 900;
-          font-size: 1.2rem;
-          margin-bottom: 3rem;
-          letter-spacing: 0.1em;
-          color: var(--primary-red);
-        }
-
-        /* FORM */
-        .bauhaus-form {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-          max-width: 500px;
-        }
-
-        .bauhaus-input {
-          padding: 1.5rem;
-          background: white;
-          border: 4px solid black;
-          font-family: inherit;
-          font-weight: 900;
-          font-size: 1.1rem;
-          outline: none;
-        }
-
-        .bauhaus-input:focus {
-           background: #FFF9C4;
-        }
-
-        /* SIDEBAR */
-        .hero-sidebar {
-          padding: 2rem;
-          display: flex;
-          flex-direction: column;
-          background: var(--primary-red);
-        }
-
-        .sidebar-header {
-           font-weight: 900;
-           font-size: 0.8rem;
-           margin-bottom: 2rem;
-           border-bottom: 2px solid white;
-           padding-bottom: 0.5rem;
-        }
-
-        .sidebar-list {
-          list-style: none;
-          font-weight: 900;
-          font-size: 1.1rem;
-          gap: 0.8rem;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .geom-shapes {
-          margin-top: auto;
-          display: flex;
-          gap: 1rem;
-          padding-top: 2rem;
-        }
-
-        .shape { width: 40px; height: 40px; }
-        .yellow-shape { background: var(--primary-yellow); border-radius: 999px; }
-        .blue-shape { 
-          width: 0; 
-          height: 0; 
-          border-left: 20px solid transparent;
-          border-right: 20px solid transparent;
-          border-bottom: 40px solid var(--primary-blue);
-        }
+        /* NAV BLOCKS */
+        .nav-blocks { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; }
+        .nav-card { padding: 2.5rem; cursor: pointer; transition: transform 0.2s; }
+        .nav-card:hover { transform: translateY(-5px); }
+        .card-index { font-weight: 900; font-size: 1.2rem; margin-bottom: 0.5rem; opacity: 0.6; }
+        .card-label { font-weight: 900; font-size: 1.5rem; text-transform: uppercase; line-height: 1; }
 
         @media (max-width: 800px) {
-          .landing-composition { grid-template-columns: 1fr; }
-          .bauhaus-landing { padding: 1.5rem; }
+          .analyzer-form { flex-direction: column; }
+          .btn-bauhaus { padding: 1.5rem; }
         }
       `}</style>
     </div>

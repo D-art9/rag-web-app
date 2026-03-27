@@ -40,16 +40,17 @@ const SearchPlayground: React.FC<SearchPlaygroundProps> = ({ onResultClick }) =>
         <div className="bauhaus-playground">
             {/* HERO SEARCH BLOCK */}
             <section className="search-header-block bauhaus-border btn-yellow bauhaus-shadow">
-                <h1 className="heading-lg">SEMANTIC_EXPLORER_v2.1</h1>
+                <h1 className="heading-lg" style={{ color: 'black' }}>SEMANTIC_EXPLORER</h1>
                 <form onSubmit={handleSearch} className="playground-form">
                     <div className="input-wrapper bauhaus-border">
-                        <Search className="search-icon" size={32} />
+                        <Search className="search-icon" size={32} color="black" />
                         <input 
                             type="text" 
                             className="playground-input" 
                             placeholder="SEARCH_CONCEPTS_ACROSS_ALL_SOURCES..."
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
+                            style={{ color: 'black' }}
                         />
                     </div>
                     <button type="submit" className="btn-search-trigger btn-red bauhaus-border" disabled={isSearching}>
@@ -68,12 +69,12 @@ const SearchPlayground: React.FC<SearchPlaygroundProps> = ({ onResultClick }) =>
                                 <span className="video-tag">SOURCE: {res.title.substring(0, 15)}...</span>
                             </div>
                             
-                            <div className="card-body">
+                            <div className="card-p-body">
                                 <div className="card-thumb bauhaus-border">
                                     <img src={res.thumbnail} alt="THUMB" />
                                 </div>
                                 <p className="card-text">"{res.text.substring(0, 250)}..."</p>
-                                <div className="card-footer">
+                                <div className="card-p-footer">
                                     <span className="source-label">VIDEO_ID: {res.videoId.substring(0, 8)}</span>
                                     <ArrowRight className="jump-icon" />
                                 </div>
@@ -92,7 +93,7 @@ const SearchPlayground: React.FC<SearchPlaygroundProps> = ({ onResultClick }) =>
             <style>{`
                 .bauhaus-playground { display: flex; flex-direction: column; gap: 4rem; padding-bottom: 5rem; }
 
-                .search-header-block { padding: 4rem; display: flex; flex-direction: column; gap: 2rem; }
+                .search-header-block { padding: 4rem; display: flex; flex-direction: column; gap: 2rem; position: relative; z-index: 5; }
 
                 .playground-form { display: flex; gap: 1rem; }
 
@@ -103,7 +104,7 @@ const SearchPlayground: React.FC<SearchPlaygroundProps> = ({ onResultClick }) =>
 
                 .playground-input { 
                     flex-grow: 1; border: none; outline: none; padding: 2rem 0;
-                    font-weight: 900; font-size: 1.5rem; font-family: inherit;
+                    font-weight: 900; font-size: 1.5rem; font-family: inherit; background: transparent;
                 }
 
                 .btn-search-trigger { padding: 0 3rem; font-weight: 900; color: white; cursor: pointer; text-transform: uppercase; }
@@ -116,7 +117,7 @@ const SearchPlayground: React.FC<SearchPlaygroundProps> = ({ onResultClick }) =>
                 }
 
                 .search-card { 
-                    background: white; cursor: pointer; transition: transform 0.2s; 
+                    background: var(--pane-bg); color: var(--foreground); cursor: pointer; transition: transform 0.2s, background 0.4s; 
                     display: flex; flex-direction: column;
                 }
                 .search-card:hover { transform: translateY(-5px); }
@@ -127,21 +128,21 @@ const SearchPlayground: React.FC<SearchPlaygroundProps> = ({ onResultClick }) =>
                     font-size: 0.7rem; letter-spacing: 0.1em;
                 }
 
-                .card-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+                .card-p-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
 
                 .card-thumb { overflow: hidden; height: 150px; }
                 .card-thumb img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%); transition: 0.3s; }
                 .search-card:hover .card-thumb img { filter: grayscale(0%); }
 
-                .card-text { font-size: 0.9rem; font-weight: 500; line-height: 1.4; color: #333; height: 80px; overflow: hidden; }
+                .card-text { font-size: 0.9rem; font-weight: 500; line-height: 1.4; height: 80px; overflow: hidden; opacity: 0.8; }
 
-                .card-footer { 
-                    margin-top: 1rem; padding-top: 1rem; border-top: 2px solid #eee;
+                .card-p-footer { 
+                    margin-top: 1rem; padding-top: 1rem; border-top: 2px solid var(--border-color);
                     display: flex; justify-content: space-between; align-items: center;
-                    font-weight: 900; font-size: 0.7rem; color: #999;
+                    font-weight: 900; font-size: 0.7rem; opacity: 0.6;
                 }
 
-                .empty-playground { grid-column: 1 / -1; padding: 5rem; text-align: center; }
+                .empty-playground { grid-column: 1 / -1; padding: 5rem; text-align: center; background: var(--pane-bg); color: var(--foreground); }
                 .empty-icon { margin: 0 auto 1.5rem; color: var(--primary-red); }
                 .heading-sm { font-weight: 900; font-size: 2rem; margin-bottom: 1rem; }
 
@@ -149,6 +150,9 @@ const SearchPlayground: React.FC<SearchPlaygroundProps> = ({ onResultClick }) =>
                     .playground-form { flex-direction: column; }
                     .search-header-block { padding: 2rem; }
                 }
+
+                .bg-blue { background: var(--primary-blue); }
+                .bg-red { background: var(--primary-red); }
             `}</style>
         </div>
     );
