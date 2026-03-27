@@ -1,19 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import LandingPage from './components/LandingPage';
 import Chat from './components/Chat';
 import SearchPlayground from './components/SearchPlayground';
 import Dataflow from './components/Dataflow';
 import ContactPage from './components/ContactPage';
+import HeroLanding from './components/HeroLanding';
 import { Circle, Square, Triangle, Menu, X, Sun, Moon } from 'lucide-react';
 import './index.css';
 
-type View = 'landing' | 'chat' | 'dataflow' | 'contact' | 'playground';
+type View = 'hero' | 'landing' | 'chat' | 'dataflow' | 'contact' | 'playground';
 
 const App: React.FC = () => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [docId, setDocId] = useState<string | null>(null);
   const [ytId, setYtId] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<View>('landing');
+  const [currentView, setCurrentView] = useState<View>('hero');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -49,6 +50,7 @@ const App: React.FC = () => {
   };
 
   const navItems = [
+    { id: 'hero', label: '00_HOME', color: 'var(--primary-red)' },
     { id: 'landing', label: '01_START', color: 'var(--primary-red)' },
     { id: 'chat', label: '02_WORKSPACE', color: 'var(--primary-blue)' },
     { id: 'playground', label: '03_EXPLORE', color: 'var(--primary-yellow)' },
@@ -96,6 +98,10 @@ const App: React.FC = () => {
 
       {/* MAIN CONTENT CANVAS */}
       <main className="bauhaus-viewport">
+        {currentView === 'hero' && (
+           <HeroLanding onOpenAnalyzer={() => setView('landing')} />
+        )}
+
         {currentView === 'landing' && (
           <LandingPage onUrlSubmit={handleUrlSubmit} onNavigate={(v: any) => setView(v)} />
         )}
@@ -220,7 +226,7 @@ const App: React.FC = () => {
           position: relative;
         }
 
-        .viewport-container { padding: 2rem; height: 100%; }
+        .viewport-container { padding: 0; height: 100%; }
 
         .empty-bauhaus {
           background: var(--pane-bg);
