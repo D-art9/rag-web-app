@@ -24,150 +24,140 @@ const LoadingScreen: React.FC<{ message?: string }> = ({ message = "SYSTEM_INGES
     }, []);
 
     return (
-        <div className="bauhaus-loading-v4">
-            
-            {/* BACKGROUND DECORATIVE SHAPES */}
-            <div className="bg-shape shadow-red"></div>
-            <div className="bg-shape shadow-blue"></div>
+        <div className="loading-v5">
             <div className="bauhaus-bg-grid"></div>
 
-            {/* LEFT TELEMETRY PANEL */}
-            <aside className="side-panel panel-left bauhaus-border">
-                <div className="panel-tag bg-blue">TELEMETRY_STREAM</div>
-                <div className="metric-group">
-                    <div className="metric">
-                        <span className="m-label">VEC_STAGED:</span>
-                        <span className="m-val">{counter}</span>
-                    </div>
-                    <div className="metric">
-                        <span className="m-label">DIMENSIONS:</span>
-                        <span className="m-val">1536d</span>
-                    </div>
-                    <div className="metric">
-                        <span className="m-label">LATENCY_MS:</span>
-                        <span className="m-val">{(Math.random() * 200 + 400).toFixed(0)}</span>
-                    </div>
-                </div>
-            </aside>
-
-            {/* RIGHT INFRA PANEL */}
-            <aside className="side-panel panel-right bauhaus-border">
-                <div className="panel-tag bg-red">CORE_ST_ARCH</div>
-                <div className="stack-links">
-                    {infraStack.map((s, i) => (
-                        <div key={i} className="stack-item">[{i+1}] {s}</div>
-                    ))}
-                </div>
-            </aside>
-
-            {/* MAIN CONTENT CANVAS */}
-            <div className="canvas-center">
-                <header className="ingest-header-v4">
-                    <div className="system-code">SCRIPTYT_v2.1_CORE</div>
-                    <h1 className="heading-xxl">NEURAL_CONVERGENCE</h1>
-                </header>
-
-                <div className="flow-canvas-v4">
-                    <div className="source-node-v4 bauhaus-border">YOUTUBE_SOURCE_IN</div>
-
-                    <div className="pipeline-split-v4">
-                        <div className="stream stream-audio">
-                             <div className="stream-line line-red">
-                                 <div className="particle circle red-bg move-down-1"></div>
-                             </div>
-                             <div className="stream-label">AUDIO_PIPELINE</div>
+            {/* MAIN GRID CONTAINER */}
+            <div className="grid-outer">
+                
+                {/* LEFT PANEL */}
+                <aside className="panel panel-l bauhaus-border">
+                    <div className="p-tag bg-blue">TELEMETRY_STREAM</div>
+                    <div className="p-body">
+                        <div className="met">
+                            <span className="m-l">VEC_STAGED:</span>
+                            <span className="m-v">{counter}</span>
                         </div>
-                        <div className="stream stream-vision">
-                             <div className="stream-line line-blue">
-                                 <div className="particle square blue-bg move-down-2"></div>
-                             </div>
-                             <div className="stream-label">VISION_PIPELINE</div>
+                        <div className="met">
+                            <span className="m-l">DIMENSIONS:</span>
+                            <span className="m-v">1536d</span>
+                        </div>
+                        <div className="met">
+                            <span className="m-l">LATENCY_MS:</span>
+                            <span className="m-v">{(Math.random() * 200 + 400).toFixed(0)}</span>
                         </div>
                     </div>
+                </aside>
 
-                    <div className="fusion-node-v4 bauhaus-border btn-yellow bauhaus-shadow">
-                        <div className="fusion-label">FUSION_VECTOR_DB</div>
-                        <div className="spinner-bauhaus"></div>
+                {/* CENTER HUB */}
+                <main className="hub-center">
+                    <header className="hub-header">
+                        <div className="sys-code">SCRIPTYT_v2.1_CORE</div>
+                        <h1 className="h-xxl">SYSTEM_CONVERGENCE</h1>
+                    </header>
+
+                    <div className="hub-vis">
+                        <div className="s-node bauhaus-border">YOUTUBE_SOURCE_IN</div>
+                        
+                        <div className="s-flow">
+                            <div className="str">
+                                <div className="str-l line-red"><div className="pt red-bg p-move"></div></div>
+                                <span className="str-t">AUDIO_P1</span>
+                            </div>
+                            <div className="str">
+                                <div className="str-l line-blue"><div className="pt blue-bg p-move-delay"></div></div>
+                                <span className="str-t">VISION_P2</span>
+                            </div>
+                        </div>
+
+                        <div className="f-node bauhaus-border btn-yellow bauhaus-shadow">
+                            <span className="f-l">VECTOR_FUSION</span>
+                            <div className="spin"></div>
+                        </div>
                     </div>
-                </div>
+                </main>
+
+                {/* RIGHT PANEL */}
+                <aside className="panel panel-r bauhaus-border">
+                    <div className="p-tag bg-red">CORE_ST_ARCH</div>
+                    <div className="p-body stack-list">
+                        {infraStack.map((s, i) => (
+                            <div key={i} className="st-item">[{i+1}] {s}</div>
+                        ))}
+                    </div>
+                </aside>
             </div>
 
-            {/* BOTTOM TICKER */}
-            <footer className="explainer-footer-v4 bauhaus-border bauhaus-shadow">
-                <div className="ticker-label-v4 bg-red">DATAFLOW_LOG_v.21</div>
-                <div className="ticker-content-v4">
-                    <div className="ticker-text-wrapper active">
-                        {technicalLogs[logIndex]}
-                    </div>
-                </div>
+            {/* TICKER */}
+            <footer className="hub-ticker bauhaus-border bauhaus-shadow">
+                <div className="t-tag bg-red">DATAFLOW_LOG_v.21</div>
+                <div className="t-box">{technicalLogs[logIndex]}</div>
             </footer>
 
             <style>{`
-                .bauhaus-loading-v4 {
+                .loading-v5 {
                     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
                     background: #F0F0F0; z-index: 1000; overflow: hidden;
-                    display: grid; grid-template-columns: 250px 1fr 250px; align-items: center;
-                    font-family: 'Outfit', sans-serif;
+                    font-family: 'Outfit', sans-serif; padding: 2rem;
                 }
 
                 .bauhaus-bg-grid {
                     position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-                    background-image: linear-gradient(#e0e0e0 1px, transparent 1px), linear-gradient(90deg, #e0e0e0 1px, transparent 1px);
-                    background-size: 50px 50px; opacity: 0.3; z-index: -2;
+                    background-image: linear-gradient(#ddd 1px, transparent 1px), linear-gradient(90deg, #ddd 1px, transparent 1px);
+                    background-size: 40px 40px; opacity: 0.2; z-index: -1;
                 }
 
-                /* DECORATIVE BACKGROUND */
-                .bg-shape { position: absolute; border-radius: 50%; z-index: -1; opacity: 0.05; filter: blur(50px); }
-                .shadow-red { width: 600px; height: 600px; background: var(--primary-red); top: -100px; left: -100px; }
-                .shadow-blue { width: 400px; height: 400px; background: var(--primary-blue); bottom: -100px; right: -100px; }
-
-                /* SIDE PANELS */
-                .side-panel { 
-                    height: 60vh; width: 100%; display: flex; flex-direction: column; background: white; 
-                    z-index: 5; box-shadow: 10px 10px 0px rgba(0,0,0,0.05);
+                .grid-outer {
+                    display: grid; grid-template-columns: 280px 1fr 280px; gap: 2rem;
+                    max-width: 1400px; margin: 0 auto; height: 100%; align-items: center;
                 }
-                .panel-left { margin-left: 2rem; }
-                .panel-right { margin-right: 2rem; }
-                .panel-tag { padding: 0.5rem; color: white; font-weight: 900; font-size: 0.6rem; text-align: center; }
 
-                .metric-group, .stack-links { padding: 2rem 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
-                .metric { display: flex; flex-direction: column; border-bottom: 2px solid #F0F0F0; padding-bottom: 0.5rem; }
-                .m-label { font-size: 0.6rem; font-weight: 900; color: #999; }
-                .m-val { font-size: 1.5rem; font-weight: 900; color: #121212; }
+                .panel { background: white; height: auto; align-self: center; display: flex; flex-direction: column; }
+                .p-tag { padding: 0.6rem; color: white; font-weight: 900; font-size: 0.7rem; text-align: center; }
+                .p-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; }
+                
+                .met { display: flex; flex-direction: column; border-bottom: 2px solid #f9f9f9; }
+                .m-l { font-size: 0.6rem; font-weight: 900; color: #999; }
+                .m-v { font-size: 1.4rem; font-weight: 900; }
 
-                .stack-item { font-weight: 900; font-size: 0.8rem; color: #333; letter-spacing: 0.05em; }
+                .st-item { font-weight: 900; font-size: 0.8rem; letter-spacing: 0.05em; }
 
                 /* CENTER */
-                .canvas-center { display: flex; flex-direction: column; align-items: center; justify-self: center; }
-                .ingest-header-v4 { text-align: center; margin-bottom: 4rem; }
-                .heading-xxl { font-weight: 900; font-size: 4rem; letter-spacing: -0.05em; margin: 0; line-height: 1; }
-                .system-code { font-weight: 900; color: var(--primary-red); margin-bottom: 0.5rem; letter-spacing: 0.4em; }
+                .hub-center { text-align: center; display: flex; flex-direction: column; align-items: center; }
+                .hub-header { margin-bottom: 3rem; }
+                .sys-code { font-weight: 900; color: var(--primary-red); letter-spacing: 0.5em; font-size: 0.8rem; margin-bottom: 0.5rem; }
+                .h-xxl { font-weight: 900; font-size: 3.5rem; letter-spacing: -0.05em; margin: 0; }
 
-                /* FLOW COMPONENTS */
-                .flow-canvas-v4 { display: flex; flex-direction: column; align-items: center; }
-                .source-node-v4 { padding: 0.5rem 2rem; background: white; font-weight: 900; box-shadow: 4px 4px 0px black; z-index: 10; font-size: 0.8rem; }
-                .pipeline-split-v4 { display: flex; gap: 10rem; }
-                .stream-line { width: 4px; height: 180px; background: black; position: relative; overflow: hidden; }
-                .particle { position: absolute; width:14px; height: 14px; border: 2.5px solid black; left: -7px; animation: slide-down 1s infinite linear; }
-                @keyframes slide-down { 0% { top: -20px; } 100% { top: 100%; } }
+                /* VISUALIZER */
+                .hub-vis { display: flex; flex-direction: column; align-items: center; }
+                .s-node { padding: 0.6rem 2rem; background: white; font-weight: 900; box-shadow: 6px 6px 0px black; z-index: 10; font-size: 0.8rem; }
+                
+                .s-flow { display: flex; gap: 6rem; padding-top: 1rem; }
+                .str { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+                .str-l { width: 4px; height: 140px; background: black; position: relative; overflow: hidden; }
+                .pt { position: absolute; width: 14px; height: 14px; border: 2.5px solid black; left: -7px; }
+                .p-move { animation: s-d 1.1s infinite linear; }
+                .p-move-delay { animation: s-d 1.1s infinite linear 0.5s; }
+                @keyframes s-d { 0% { top: -20px; } 100% { top: 100%; } }
+                .str-t { font-weight: 900; font-size: 0.6rem; color: #666; }
 
-                .fusion-node-v4 { margin-top: 2rem; padding: 1rem 3rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
-                .spinner-bauhaus { width: 25px; height: 25px; border: 4px solid black; border-top-color: white; border-radius: 50%; animation: rotate 1s infinite linear; }
-                @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                .f-node { margin-top: 1rem; padding: 1rem 2rem; display: flex; flex-direction: column; align-items: center; gap: 0.8rem; }
+                .f-l { font-weight: 900; font-size: 0.9rem; }
+                .spin { width: 22px; height: 22px; border: 4px solid black; border-top-color: white; border-radius: 50%; animation: rot 1s infinite linear; }
+                @keyframes rot { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-                /* FOOTER */
-                .explainer-footer-v4 { 
-                    position: fixed; bottom: 3rem; left: 50%; transform: translateX(-50%); width: 800px; max-width: 90vw; background: white;
-                    display: flex; height: 60px;
+                /* TICKER */
+                .hub-ticker { 
+                    position: fixed; bottom: 3rem; left: 50%; transform: translateX(-50%);
+                    width: auto; min-width: 600px; display: flex; background: white; height: 60px;
                 }
-                .ticker-label-v4 { padding: 0 1.5rem; display: flex; align-items: center; color: white; font-weight: 900; font-size: 0.7rem; }
-                .ticker-content-v4 { flex-grow: 1; padding: 0 2rem; display: flex; align-items: center; overflow: hidden; }
-                .ticker-text-wrapper { font-weight: 900; font-size: 1.2rem; transition: 0.3s; }
+                .t-tag { padding: 0 1.5rem; display: flex; align-items: center; color: white; font-weight: 900; font-size: 0.7rem; }
+                .t-box { flex-grow: 1; padding: 0 2rem; display: flex; align-items: center; font-weight: 900; font-size: 1.1rem; }
 
-                @media (max-width: 1100px) {
-                    .bauhaus-loading-v4 { grid-template-columns: 1fr; }
-                    .side-panel { display: none; }
-                    .bg-shape { display: none; }
+                @media (max-width: 1000px) {
+                    .grid-outer { grid-template-columns: 1fr; }
+                    .panel { display: none; }
+                    .h-xxl { font-size: 2.5rem; }
                 }
 
                 .bg-blue { background: var(--primary-blue); }
