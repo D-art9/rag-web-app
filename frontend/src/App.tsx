@@ -4,18 +4,16 @@ import Chat from './components/Chat';
 import SearchPlayground from './components/SearchPlayground';
 import Dataflow from './components/Dataflow';
 import ContactPage from './components/ContactPage';
-import StudyChat from './components/StudyChat';
 import { Circle, Square, Triangle } from 'lucide-react';
 import './index.css';
 
-type View = 'landing' | 'chat' | 'dataflow' | 'contact' | 'study' | 'playground';
+type View = 'landing' | 'chat' | 'dataflow' | 'contact' | 'playground';
 
 const App: React.FC = () => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [docId, setDocId] = useState<string | null>(null);
   const [ytId, setYtId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<View>('landing');
-  const [studyContext, setStudyContext] = useState<string>('');
 
   const handleUrlSubmit = (url: string, id: string) => {
     let youtubeId = '';
@@ -45,7 +43,6 @@ const App: React.FC = () => {
     { id: 'landing', label: '01_START', color: 'var(--primary-red)' },
     { id: 'chat', label: '02_WORKSPACE', color: 'var(--primary-blue)' },
     { id: 'playground', label: '03_EXPLORE', color: 'var(--primary-yellow)' },
-    { id: 'study', label: '04_KNOWLEDGE', color: 'var(--foreground)' },
   ];
 
   return (
@@ -97,7 +94,6 @@ const App: React.FC = () => {
                 videoUrl={videoUrl}
                 videoId={docId || ''}
                 ytId={ytId || ''}
-                onExportToStudy={(c) => { setStudyContext(c); setCurrentView('study'); }}
               />
             ) : (
                 <div className="empty-bauhaus bauhaus-border">
@@ -114,7 +110,6 @@ const App: React.FC = () => {
 
         {currentView === 'dataflow' && <Dataflow onBack={() => setCurrentView('landing')} />}
         {currentView === 'contact' && <ContactPage onBack={() => setCurrentView('landing')} />}
-        {currentView === 'study' && <StudyChat initialContext={studyContext} onBack={() => setCurrentView('chat')} />}
       </main>
 
       <style>{`

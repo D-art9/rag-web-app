@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Maximize2, Minimize2, Database, Percent } from 'lucide-react';
+import { Maximize2, Minimize2 } from 'lucide-react';
 import { sendMessage } from '../services/api';
 
 interface ChatProps {
     videoUrl: string;
     videoId: string;
     ytId: string;
-    onExportToStudy?: (content: string) => void;
 }
 
 interface Message {
@@ -17,7 +16,7 @@ interface Message {
     sources?: string[];
 }
 
-const Chat: React.FC<ChatProps> = ({ videoId, ytId, onExportToStudy }) => {
+const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
     const [messages, setMessages] = useState<Message[]>([
         { text: "### 🔍 ANALYZE_COMPLETED\nSYSTEM_READY_FOR_QUERY", sender: 'ai' }
     ]);
@@ -74,9 +73,9 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId, onExportToStudy }) => {
                             </div>
                         </div>
 
-                        <button className="btn-bauhaus btn-yellow full-width" style={{ marginTop: 'auto' }} onClick={() => onExportToStudy?.(messages.map(m => m.text).join('\n'))}>
-                            EXPORT_KNOWLEDGE
-                        </button>
+                        <div className="source-footer" style={{ marginTop: 'auto', textAlign: 'center' }}>
+                            <div className="tag-bauhaus bauhaus-border">SYSTEM_VERIFIED</div>
+                        </div>
                     </div>
                 </aside>
             )}
@@ -209,6 +208,8 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId, onExportToStudy }) => {
                    margin-top: 1rem; border-top: 2px dashed black; padding-top: 0.5rem;
                    font-size: 0.7rem; color: #666; font-weight: 900;
                 }
+
+                .tag-bauhaus { padding: 1rem; font-weight: 900; font-size: 0.8rem; background: #eee; }
 
                 .typing-indicator { padding: 1rem; background: #eee; font-weight: 900; width: fit-content; margin: 0 auto; }
 
