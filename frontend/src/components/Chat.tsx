@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { Maximize2, Minimize2, Database, Percent } from 'lucide-react';
 import { sendMessage } from '../services/api';
 
 interface ChatProps {
@@ -22,6 +23,7 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId, onExportToStudy }) => {
     ]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -48,40 +50,57 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId, onExportToStudy }) => {
     };
 
     return (
-        <div className="bauhaus-chat-layout">
-            {/* SOURCE PANEL (YELLOW THEMED) */}
-            <aside className="bauhaus-pane source-panel bauhaus-border bauhaus-shadow">
-                <div className="pane-headline">01_SOURCE</div>
-                
-                <div className="pane-content">
-                    <div className="thumb-container bauhaus-border">
-                        <img 
-                            src={`https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`} 
-                            alt="YOUTUBE_SOURCE" 
-                            style={{ width: '100%', display: 'block' }}
-                        />
-                        <div className="thumb-overlay">ID: {ytId}</div>
-                    </div>
+        <div className={`bauhaus-chat-layout ${isExpanded ? 'expanded' : ''}`}>
+            {/* SOURCE PANEL (VISIBLE ONLY WHEN NOT EXPANDED) */}
+            {!isExpanded && (
+                <aside className="bauhaus-pane source-panel bauhaus-border bauhaus-shadow">
+                    <div className="pane-headline">01_SOURCE</div>
                     
-                    <div className="source-meta">
-                        <label className="metadata-label">METADATA_STREAM</label>
-                        <div className="metadata-box bauhaus-border">
-                             <div className="meta-row"><span>ANALYSIS_v1.0.0</span></div>
-                             <div className="meta-row"><span>RAG_STATUS: [OK]</span></div>
+                    <div className="pane-content">
+                        <div className="thumb-container bauhaus-border">
+                            <img 
+                                src={`https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`} 
+                                alt="YOUTUBE_SOURCE" 
+                                style={{ width: '100%', display: 'block' }}
+                            />
+                            <div className="thumb-overlay">ID: {ytId}</div>
                         </div>
+                        
+                        <div className="source-meta">
+                            <label className="metadata-label">METADATA_STREAM</label>
+                            <div className="metadata-box bauhaus-border">
+                                 <div className="meta-row"><span>ANALYSIS_v1.0.0</span></div>
+                                 <div className="meta-row"><span>RAG_STATUS: [OK]</span></div>
+                            </div>
+                        </div>
+
+                        <button className="btn-bauhaus btn-yellow full-width" style={{ marginTop: 'auto' }} onClick={() => onExportToStudy?.(messages.map(m => m.text).join('\n'))}>
+                            EXPORT_KNOWLEDGE
+                        </button>
                     </div>
+                </aside>
+            )}
 
-                    <button className="btn-bauhaus btn-yellow full-width" style={{ marginTop: 'auto' }} onClick={() => onExportToStudy?.(messages.map(m => m.text).join('\n'))}>
-                        EXPORT_KNOWLEDGE_BASE
-                    </button>
-                </div>
-            </aside>
-
-            {/* CHAT PANEL (WHITE THEMED) */}
+            {/* CHAT PANEL (ADAPTIVE) */}
             <main className="bauhaus-pane chat-panel bauhaus-border bauhaus-shadow">
-                <div className="pane-headline">02_WORKSPACE</div>
+                <div className="pane-headline">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                        <span>{isExpanded ? 'FULL_WORKSPACE_MODE' : '02_WORKSPACE'}</span>
+                        <button className="expand-toggle-btn" onClick={() => setIsExpanded(!isExpanded)}>
+                            {isExpanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                        </button>
+                    </div>
+                </div>
 
                 <div className="chat-flow scroll-bauhaus">
+                    {/* FLOATING THUMBNAIL IN EXPANDED MODE */}
+                    {isExpanded && (
+                        <div className="floating-source-tag bauhaus-border bauhaus-shadow-sm">
+                            <img src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`} alt="SOURCE_THUMB" />
+                            <div className="tag-meta">SOURCE_ID: {ytId.substring(0, 4)}...</div>
+                        </div>
+                    )}
+
                     {messages.map((msg, i) => (
                         <div key={i} className={`bauhaus-msg ${msg.sender} bauhaus-border`}>
                             <div className={`msg-header ${msg.sender === 'user' ? 'bg-red' : 'bg-blue'}`}>
@@ -120,6 +139,12 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId, onExportToStudy }) => {
                     grid-template-columns: 350px 1fr;
                     gap: 3rem;
                     height: 100%;
+                    transition: all 0.4s ease-out;
+                }
+
+                .bauhaus-chat-layout.expanded {
+                    grid-template-columns: 1fr;
+                    padding: 0 4rem;
                 }
 
                 .bauhaus-pane {
@@ -137,23 +162,36 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId, onExportToStudy }) => {
                     font-weight: 900;
                     font-size: 1rem;
                     letter-spacing: 0.1em;
+                    display: flex;
                 }
+
+                .expand-toggle-btn {
+                    background: none;
+                    border: 2px solid white;
+                    color: white;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 4px;
+                    transition: all 0.2s;
+                }
+                .expand-toggle-btn:hover { background: white; color: black; }
 
                 .pane-content { padding: 2rem; flex-grow: 1; display: flex; flex-direction: column; }
 
-                /* THUMBNAIL */
-                .thumb-container { position: relative; overflow: hidden; }
-                .thumb-overlay {
-                    position: absolute; bottom: 0; left: 0; right: 0;
-                    background: var(--primary-red); color: white; padding: 0.2rem 1rem;
-                    font-weight: 900; font-size: 0.7rem;
+                /* FLOATING THUMB */
+                .floating-source-tag {
+                    position: sticky;
+                    top: 0;
+                    margin-bottom: 2rem;
+                    width: 140px;
+                    background: white;
+                    z-index: 10;
+                    overflow: hidden;
                 }
-
-                /* META */
-                .source-meta { margin-top: 2rem; }
-                .metadata-label { display: block; font-weight: 900; font-size: 0.7rem; margin-bottom: 0.5rem; }
-                .metadata-box { padding: 1rem; font-weight: 700; font-size: 0.9rem; }
-                .meta-row { margin-bottom: 0.5rem; }
+                .floating-source-tag img { width: 100%; display: block; filter: grayscale(100%); }
+                .tag-meta { background: black; color: white; font-size: 0.6rem; padding: 4px; font-weight: 900; }
 
                 /* CHAT */
                 .chat-flow { flex-grow: 1; padding: 2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 2rem; }
@@ -175,15 +213,16 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId, onExportToStudy }) => {
                 .typing-indicator { padding: 1rem; background: #eee; font-weight: 900; width: fit-content; margin: 0 auto; }
 
                 /* INPUT */
-                .chat-input-area { margin: 2rem; display: flex; transform: translateY(-1rem); }
+                .chat-input-area { margin: 1rem 2rem 2rem; display: flex; }
                 .chat-input-field { flex-grow: 1; border: none; padding: 1.5rem; font-weight: 900; font-family: inherit; outline: none; }
                 .chat-send-btn { border-top: none; border-bottom: none; border-right: none; }
 
                 .full-width { width: 100%; }
 
                 @media (max-width: 1000px) {
-                  .bauhaus-chat-layout { grid-template-columns: 1fr; }
+                  .bauhaus-chat-layout { grid-template-columns: 1fr !important; }
                   .source-panel { display: none; }
+                  .floating-source-tag { display: block; }
                 }
             `}</style>
         </div>
