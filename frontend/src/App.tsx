@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import LandingPage from './components/LandingPage';
 import Chat from './components/Chat';
+import SearchPlayground from './components/SearchPlayground';
 import Dataflow from './components/Dataflow';
 import ContactPage from './components/ContactPage';
 import StudyChat from './components/StudyChat';
 import { Circle, Square, Triangle } from 'lucide-react';
 import './index.css';
 
-type View = 'landing' | 'chat' | 'dataflow' | 'contact' | 'study';
+type View = 'landing' | 'chat' | 'dataflow' | 'contact' | 'study' | 'playground';
 
 const App: React.FC = () => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -28,10 +29,23 @@ const App: React.FC = () => {
     setCurrentView('chat');
   };
 
+  const handleResultClick = (id: string, url: string, title: string, thumb: string) => {
+    let youtubeId = '';
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    if (match && match[2].length === 11) youtubeId = match[2];
+
+    setVideoUrl(url);
+    setDocId(id);
+    setYtId(youtubeId);
+    setCurrentView('chat');
+  };
+
   const navItems = [
     { id: 'landing', label: '01_START', color: 'var(--primary-red)' },
     { id: 'chat', label: '02_WORKSPACE', color: 'var(--primary-blue)' },
-    { id: 'study', label: '03_KNOWLEDGE', color: 'var(--primary-yellow)' },
+    { id: 'playground', label: '03_EXPLORE', color: 'var(--primary-yellow)' },
+    { id: 'study', label: '04_KNOWLEDGE', color: 'var(--foreground)' },
   ];
 
   return (
@@ -70,6 +84,12 @@ const App: React.FC = () => {
           <LandingPage onUrlSubmit={handleUrlSubmit} onNavigate={(v: any) => setCurrentView(v)} />
         )}
 
+        {currentView === 'playground' && (
+          <div className="viewport-container">
+               <SearchPlayground onResultClick={handleResultClick} />
+          </div>
+        )}
+
         {currentView === 'chat' && (
           <div className="viewport-container">
             {videoUrl ? (
@@ -82,8 +102,11 @@ const App: React.FC = () => {
             ) : (
                 <div className="empty-bauhaus bauhaus-border">
                     <h2 className="heading-lg">NO SOURCE LOADED</h2>
-                    <p>PLEASE LOAD A VIDEO SOURCE FROM THE START PANEL.</p>
-                    <button className="btn-bauhaus btn-red" onClick={() => setCurrentView('landing')}>GOTO START</button>
+                    <p>PLEASE LOAD A VIDEO SOURCE OR USE DISCOVERY MODE.</p>
+                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '2rem' }}>
+                        <button className="btn-bauhaus btn-red" onClick={() => setCurrentView('landing')}>GOTO START</button>
+                        <button className="btn-bauhaus btn-yellow" onClick={() => setCurrentView('playground')}>GOTO EXPLORE</button>
+                    </div>
                 </div>
             )}
           </div>
