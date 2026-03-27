@@ -4,7 +4,7 @@ import Chat from './components/Chat';
 import SearchPlayground from './components/SearchPlayground';
 import Dataflow from './components/Dataflow';
 import ContactPage from './components/ContactPage';
-import { Circle, Square, Triangle } from 'lucide-react';
+import { Circle, Square, Triangle, Menu, X } from 'lucide-react';
 import './index.css';
 
 type View = 'landing' | 'chat' | 'dataflow' | 'contact' | 'playground';
@@ -14,6 +14,12 @@ const App: React.FC = () => {
   const [docId, setDocId] = useState<string | null>(null);
   const [ytId, setYtId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<View>('landing');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const setView = (v: View) => {
+    setCurrentView(v);
+    setIsMobileMenuOpen(false);
+  };
 
   const handleUrlSubmit = (url: string, id: string) => {
     let youtubeId = '';
@@ -24,7 +30,7 @@ const App: React.FC = () => {
     setVideoUrl(url);
     setDocId(id);
     setYtId(youtubeId);
-    setCurrentView('chat');
+    setView('chat');
   };
 
   const handleResultClick = (id: string, url: string, title: string, thumb: string) => {
@@ -36,7 +42,7 @@ const App: React.FC = () => {
     setVideoUrl(url);
     setDocId(id);
     setYtId(youtubeId);
-    setCurrentView('chat');
+    setView('chat');
   };
 
   const navItems = [
@@ -46,13 +52,18 @@ const App: React.FC = () => {
   ];
 
   return (
-    <div className="bauhaus-root">
+    <div className={`bauhaus-root ${isMobileMenuOpen ? 'menu-open' : ''}`}>
+      {/* MOBILE TRIGGER */}
+      <button className="mobile-menu-trigger bauhaus-border" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+        {isMobileMenuOpen ? <X size={32}/> : <Menu size={32}/>}
+      </button>
+
       {/* ASYMMETRIC NAVIGATION PANEL */}
       <nav className="bauhaus-nav bauhaus-border">
          <div className="brand-logo">
-            <Circle className="logo-shape" fill="var(--primary-red)" color="transparent" size={32} />
-            <Square className="logo-shape" fill="var(--primary-blue)" color="transparent" size={32} />
-            <Triangle className="logo-shape" fill="var(--primary-yellow)" color="transparent" size={32} />
+            <Circle className="logo-shape" fill="var(--primary-red)" color="transparent" size={24} />
+            <Square className="logo-shape" fill="var(--primary-blue)" color="transparent" size={24} />
+            <Triangle className="logo-shape" fill="var(--primary-yellow)" color="transparent" size={24} />
             <div className="logo-text">SCRIPTYT</div>
          </div>
 
@@ -61,7 +72,7 @@ const App: React.FC = () => {
              <button
                key={item.id}
                className={`nav-btn ${currentView === item.id ? 'active' : ''}`}
-               onClick={() => setCurrentView(item.id as View)}
+               onClick={() => setView(item.id as View)}
                style={{ '--accent-color': item.color } as any}
              >
                <span className="btn-index">{item.label.split('_')[0]}</span>
@@ -71,14 +82,14 @@ const App: React.FC = () => {
          </div>
 
          <div className="nav-footer">
-            <div className="status-badge">SYSTEM_v2.0</div>
+            <div className="status-badge">SYSTEM_v2.0_READY</div>
          </div>
       </nav>
 
       {/* MAIN CONTENT CANVAS */}
       <main className="bauhaus-viewport">
         {currentView === 'landing' && (
-          <LandingPage onUrlSubmit={handleUrlSubmit} onNavigate={(v: any) => setCurrentView(v)} />
+          <LandingPage onUrlSubmit={handleUrlSubmit} onNavigate={(v: any) => setView(v)} />
         )}
 
         {currentView === 'playground' && (
@@ -97,19 +108,19 @@ const App: React.FC = () => {
               />
             ) : (
                 <div className="empty-bauhaus bauhaus-border">
-                    <h2 className="heading-lg">NO SOURCE LOADED</h2>
-                    <p>PLEASE LOAD A VIDEO SOURCE OR USE DISCOVERY MODE.</p>
-                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '2rem' }}>
-                        <button className="btn-bauhaus btn-red" onClick={() => setCurrentView('landing')}>GOTO START</button>
-                        <button className="btn-bauhaus btn-yellow" onClick={() => setCurrentView('playground')}>GOTO EXPLORE</button>
+                    <h2 className="heading-lg">NO_SOURCE_FOUND</h2>
+                    <p>SYSTEM_RECEPTORS_IDLE. PLEASE FEED A SOURCE OR DISCOVER VIA EXPLORE.</p>
+                    <div className="composition-buttons" style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '2rem' }}>
+                        <button className="btn-bauhaus btn-red" onClick={() => setView('landing')}>GOTO_START</button>
+                        <button className="btn-bauhaus btn-yellow" onClick={() => setView('playground')}>GOTO_EXPLORE</button>
                     </div>
                 </div>
             )}
           </div>
         )}
 
-        {currentView === 'dataflow' && <Dataflow onBack={() => setCurrentView('landing')} />}
-        {currentView === 'contact' && <ContactPage onBack={() => setCurrentView('landing')} />}
+        {currentView === 'dataflow' && <Dataflow onBack={() => setView('landing')} />}
+        {currentView === 'contact' && <ContactPage onBack={() => setView('landing')} />}
       </main>
 
       <style>{`
@@ -120,6 +131,7 @@ const App: React.FC = () => {
           width: 100vw;
           background: #F0F0F0;
           overflow: hidden;
+          position: relative;
         }
 
         /* NAVIGATION */
@@ -128,11 +140,12 @@ const App: React.FC = () => {
           border-right: 4px solid black;
           display: flex;
           flex-direction: column;
-          z-index: 10;
+          z-index: 100;
+          transition: transform 0.3s ease-in-out;
         }
 
         .brand-logo {
-          padding: 3rem 2rem;
+          padding: 2.5rem 2rem;
           display: flex;
           align-items: center;
           gap: 0.5rem;
@@ -140,16 +153,16 @@ const App: React.FC = () => {
           background: white;
         }
         
-        .logo-text { font-weight: 900; font-size: 1.5rem; letter-spacing: -0.05em; margin-left: 0.5rem; }
+        .logo-text { font-weight: 900; font-size: 1.2rem; letter-spacing: -0.05em; margin-left: 0.5rem; }
 
-        .nav-links { flex-grow: 1; padding: 2rem 0; }
+        .nav-links { flex-grow: 1; padding: 1rem 0; }
         
         .nav-btn {
           width: 100%;
           border: none;
           background: transparent;
           text-align: left;
-          padding: 1.5rem 2rem;
+          padding: 1.2rem 2rem;
           cursor: pointer;
           display: flex;
           flex-direction: column;
@@ -164,10 +177,21 @@ const App: React.FC = () => {
           border-bottom: 4px solid black;
         }
         
-        .btn-index { font-weight: 900; font-size: 0.8rem; margin-bottom: 0.2rem; }
-        .btn-label { font-weight: 900; font-size: 1.5rem; text-transform: uppercase; }
+        .btn-index { font-weight: 900; font-size: 0.7rem; margin-bottom: 0.1rem; }
+        .btn-label { font-weight: 900; font-size: 1.3rem; text-transform: uppercase; }
 
-        .nav-footer { padding: 2rem; border-top: 4px solid black; font-weight: 900; font-size: 0.8rem; }
+        .nav-footer { padding: 1.5rem; border-top: 4px solid black; font-weight: 900; font-size: 0.7rem; }
+
+        /* MOBILE OVERRIDES */
+        .mobile-menu-trigger {
+          display: none;
+          position: absolute;
+          top: 1rem; right: 1rem;
+          background: var(--primary-red);
+          color: white;
+          padding: 0.5rem;
+          z-index: 200;
+        }
 
         /* VIEWPORT */
         .bauhaus-viewport {
@@ -176,22 +200,26 @@ const App: React.FC = () => {
           position: relative;
         }
 
-        .viewport-container { padding: 3rem; height: 100%; }
+        .viewport-container { padding: 2rem; height: 100%; }
 
         .empty-bauhaus {
           background: white;
-          padding: 4rem;
-          max-width: 600px;
-          margin: 0 auto;
+          padding: 4rem 2rem;
+          max-width: 650px;
+          margin: 4rem auto;
           text-align: center;
           box-shadow: 12px 12px 0px 0px #121212;
         }
 
         @media (max-width: 900px) {
           .bauhaus-root { grid-template-columns: 1fr; }
-          .bauhaus-nav { height: auto; border-bottom: 4px solid black; border-right: none; }
-          .nav-links { display: flex; padding: 0; }
-          .nav-btn { padding: 1rem; align-items: center; }
+          .bauhaus-nav { 
+             position: absolute; transform: translateX(-100%); 
+             height: 100%; width: 280px; 
+          }
+          .bauhaus-root.menu-open .bauhaus-nav { transform: translateX(0); }
+          .mobile-menu-trigger { display: flex; }
+          .viewport-container { padding: 1rem; padding-top: 5rem; }
         }
       `}</style>
     </div>
