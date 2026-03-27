@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import LoadingScreen from './LoadingScreen';
 
 interface LandingPageProps {
   onUrlSubmit: (url: string, id: string) => void;
@@ -28,7 +29,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onUrlSubmit, onNavigate }) =>
 
     setIsAnalyzing(true);
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://scriptyt-test-laptop.localtunnel.me/api';
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://scriptyt-test-laptop.loca.lt/api';
       const response = await fetch(`${API_BASE_URL}/documents/upload`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -37,14 +38,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onUrlSubmit, onNavigate }) =>
 
       const data = await response.json();
       if (data.id) onUrlSubmit(url, data.id);
-      else alert('Analysis Failed: ID_UNDEFINED');
+      else throw new Error('MISSION_ABORTED: NO_DATA_BACK');
     } catch (err) {
       console.error(err);
-      alert('Network Error: [CONN_FAILURE]');
+      alert('Network Error: [CONN_FAILURE_OR_503]');
     } finally {
       setIsAnalyzing(false);
     }
   };
+
+  if (isAnalyzing) return <LoadingScreen message="CONVERGING_NEURAL_PIPELINES..." />;
 
   return (
     <div className="bauhaus-landing">
