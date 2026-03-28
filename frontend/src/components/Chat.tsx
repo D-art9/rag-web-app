@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Maximize2, Minimize2 } from 'lucide-react';
-import { sendMessage } from '../services/api';
 
 interface ChatProps {
     videoUrl: string;
@@ -38,7 +37,6 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
         setMessages(p => [...p, { text: userMsg, sender: 'user' }]);
         setIsTyping(true);
 
-        // Add a placeholder AI message that we will "fill" with the stream
         const placeholderAiMsg: Message = { text: '', sender: 'ai' };
         setMessages(p => [...p, placeholderAiMsg]);
 
@@ -68,28 +66,30 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
                         const dataStr = line.replace('data: ', '');
                         try {
                             const data = JSON.parse(dataStr);
+                            
+                            // To fix no-loop-func, we update the local accumulated text 
+                            // and then use a functional state update that only touches state
                             if (data.text) {
                                 accumulatedText += data.text;
-                                // Update the LAST message in the array incrementally
+                                const freshText = accumulatedText; // Safe reference
                                 setMessages(prev => {
                                     const next = [...prev];
-                                    next[next.length - 1] = { ...next[next.length - 1], text: accumulatedText };
+                                    next[next.length - 1] = { ...next[next.length - 1], text: freshText };
                                     return next;
                                 });
                             }
+
                             if (data.done) {
-                                // Final update with sources
+                                const finalSources = data.sources; // Safe reference
                                 setMessages(prev => {
                                     const next = [...prev];
-                                    next[next.length - 1] = { ...next[next.length - 1], sources: data.sources };
+                                    next[next.length - 1] = { ...next[next.length - 1], sources: finalSources };
                                     return next;
                                 });
                             }
-                            if (data.error) {
-                                throw new Error(data.error);
-                            }
+
+                            if (data.error) throw new Error(data.error);
                         } catch (e) {
-                            // JSON fragments can happen in rare cases, we ignore or log
                             console.warn('[STREAM_JSON_PARTIAL]', e);
                         }
                     }
