@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
         const vectorDB = getVectorDBClient();
         
         // 1. Perform vector search across the ENTIRE index (no filter)
-        const results = await vectorDB.search(q, { k: 12 });
+        const results = await vectorDB.search(q, undefined, 12);
 
         console.log(`[GLOBAL_SEARCH] ✓ FOUND_${results.length}_MATCHES`);
 
