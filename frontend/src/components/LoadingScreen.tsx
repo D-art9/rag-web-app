@@ -14,163 +14,210 @@ const technicalLogs = [
 
 const infraStack = ["MONGODB_ATLAS", "GEMINI_1.5_FLASH", "PINECONE_VEC", "EXPRESS_v4.1", "T_TRANSFORMERS"];
 
+const DATA_STEPS = [
+    { title: "AUDIO_INGESTION", desc: "Extracting high-fidelity MP3 streams from YouTube source.", color: "var(--primary-red)" },
+    { title: "VISION_SAMPLING", desc: "Performing deep neural analysis on visual metadata and frames.", color: "var(--primary-blue)" },
+    { title: "NEURAL_VECTORIZATION", desc: "Converting multimodal data into 1536-dimensional math vectors.", color: "var(--primary-yellow)" },
+    { title: "RAG_SYNERGY", desc: "Mapping visual insights against audio transcripts for 100% accuracy.", color: "var(--border-color)" }
+];
+
 const LoadingScreen: React.FC<{ message?: string }> = ({ message = "SYSTEM_INGESTION_ACTIVE" }) => {
     const [logIndex, setLogIndex] = useState(0);
     const [counter, setCounter] = useState(256);
+    const [activeStep, setActiveStep] = useState(0);
     const [infraStatus, setInfraStatus] = useState("INGESTION_ACTIVE");
 
     useEffect(() => {
         const logInt = setInterval(() => setLogIndex((p) => (p + 1) % technicalLogs.length), 3000);
         const countInt = setInterval(() => setCounter(p => p + Math.floor(Math.random() * 50)), 500);
-        
-        // After 7 seconds, if still loading, show the "Warming Up" message
+        const stepInt = setInterval(() => setActiveStep((p) => (p + 1) % DATA_STEPS.length), 4000);
         const statusT = setTimeout(() => setInfraStatus("WARMING_UP_LOCAL_CORES"), 7000);
 
         return () => { 
             clearInterval(logInt); 
             clearInterval(countInt); 
+            clearInterval(stepInt);
             clearTimeout(statusT);
         };
     }, []);
 
     return (
-        <div className="loading-v5">
+        <div className="loading-v6">
             <div className="bauhaus-bg-grid"></div>
 
-            {/* MAIN GRID CONTAINER */}
-            <div className="grid-outer">
+            {/* MAIN INTERFACE */}
+            <div className="view-container">
                 
-                {/* LEFT PANEL */}
-                <aside className="panel panel-l bauhaus-border">
-                    <div className="p-tag bg-blue">TELEMETRY_STREAM</div>
-                    <div className="p-body">
-                        <div className="met">
-                            <span className="m-l">VEC_STAGED:</span>
-                            <span className="m-v">{counter}</span>
+                {/* TOP HEADER - SYSTEM STATUS */}
+                <header className="system-hdr bauhaus-border-bottom">
+                    <div className="hdr-meta">
+                        <span className="dot pulse"></span>
+                        <span className="st-txt">MISSION_ACTIVE: {message}</span>
+                    </div>
+                    <div className="hdr-title">SCRIPTYT_v2.1_CORE // {infraStatus}</div>
+                    <div className="hdr-telemetry">CPU_READY: {counter} // VEC_DIM: 1536d</div>
+                </header>
+
+                {/* THE CORE VISUALIZER ENGINE */}
+                <div className="visualizer-field">
+                    
+                    {/* INPUT SOURCE */}
+                    <div className="ingestion-node bauhaus-border">
+                        <div className="node-caption">00_YT_SOURCE</div>
+                        <div className="node-icon">🛰️</div>
+                        <div className="node-status">STABILIZED</div>
+                    </div>
+
+                    {/* DYNAMIC FLOW CHANNELS */}
+                    <div className="flow-complex">
+                        <div className="channel audio-channel">
+                            <div className="beam beam-red"></div>
+                            <div className={`intel-card ${activeStep === 0 ? 'active' : ''}`}>
+                                <label style={{ color: 'var(--primary-red)' }}>TIER_01: AUDIO_CORE</label>
+                                <p>{DATA_STEPS[0].desc}</p>
+                            </div>
                         </div>
-                        <div className="met">
-                            <span className="m-l">DIMENSIONS:</span>
-                            <span className="m-v">1536d</span>
-                        </div>
-                        <div className="met">
-                            <span className="m-l">LATENCY_MS:</span>
-                            <span className="m-v">{(Math.random() * 200 + 400).toFixed(0)}</span>
+
+                        <div className="channel vision-channel">
+                            <div className="beam beam-blue"></div>
+                            <div className={`intel-card ${activeStep === 1 ? 'active' : ''}`}>
+                                <label style={{ color: 'var(--primary-blue)' }}>TIER_02: VISION_SYNC</label>
+                                <p>{DATA_STEPS[1].desc}</p>
+                            </div>
                         </div>
                     </div>
-                </aside>
 
-                {/* CENTER HUB */}
-                <main className="hub-center">
-                    <header className="hub-header">
-                        <div className="sys-code">SCRIPTYT_v2.1_CORE // {infraStatus}</div>
-                        <h1 className="h-xxl">SYSTEM_CONVERGENCE</h1>
-                    </header>
-
-                    <div className="hub-vis">
-                        <div className="s-node bauhaus-border">YOUTUBE_SOURCE_IN</div>
+                    {/* CONVERGENCE POINT */}
+                    <div className="convergence-node">
+                        <div className={`fusion-ring ${activeStep >= 2 ? 'spinning' : ''}`}></div>
+                        <div className="node-center bauhaus-border bauhaus-shadow">
+                            <div className="node-caption">03_VECTOR_FUSION</div>
+                            <div className="fusion-status">{DATA_STEPS[activeStep].title}</div>
+                        </div>
                         
-                        <div className="s-flow">
-                            <div className="str">
-                                <div className="str-l line-red"><div className="pt red-bg p-move"></div></div>
-                                <span className="str-t">AUDIO_P1</span>
-                            </div>
-                            <div className="str">
-                                <div className="str-l line-blue"><div className="pt blue-bg p-move-delay"></div></div>
-                                <span className="str-t">VISION_P2</span>
-                            </div>
-                        </div>
-
-                        <div className="f-node bauhaus-border btn-yellow bauhaus-shadow">
-                            <span className="f-l">VECTOR_FUSION</span>
-                            <div className="spin"></div>
+                        {/* FINAL CONTEXT LABEL */}
+                        <div className={`context-desc ${activeStep >= 2 ? 'fade-in' : ''}`}>
+                           [!] {DATA_STEPS[activeStep].desc}
                         </div>
                     </div>
-                </main>
+                </div>
 
-                {/* RIGHT PANEL */}
-                <aside className="panel panel-r bauhaus-border">
-                    <div className="p-tag bg-red">CORE_ST_ARCH</div>
-                    <div className="p-body stack-list">
-                        {infraStack.map((s, i) => (
-                            <div key={i} className="st-item">[{i+1}] {s}</div>
-                        ))}
-                    </div>
-                </aside>
+                {/* SIDE INFRA STACK */}
+                <div className="infra-stack-view">
+                   {infraStack.map((s, i) => (
+                       <div key={i} className="stack-row">
+                           <span className="row-num">0{i+1}</span>
+                           <span className="row-val">{s}</span>
+                       </div>
+                   ))}
+                </div>
+
+                {/* BOTTOM LOG STREAM */}
+                <footer className="footer-logs bauhaus-border-top">
+                    <div className="log-prefix bg-red">DATAFLOW_LOG_v2.1</div>
+                    <div className="log-msg">{technicalLogs[logIndex]}</div>
+                    <div className="log-timer">ELAPSED: {(counter / 100).toFixed(1)}s</div>
+                </footer>
             </div>
 
-            {/* TICKER */}
-            <footer className="hub-ticker bauhaus-border bauhaus-shadow">
-                <div className="t-tag bg-red">DATAFLOW_LOG_v.21</div>
-                <div className="t-box">{technicalLogs[logIndex]}</div>
-            </footer>
-
             <style>{`
-                .loading-v5 {
+                .loading-v6 {
                     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-                    background: #F0F0F0; z-index: 1000; overflow: hidden;
-                    font-family: 'Outfit', sans-serif; padding: 2rem;
+                    background: #F4F4F4; z-index: 1000; overflow: hidden;
+                    font-family: 'Outfit', sans-serif; color: #1a1a1a;
                 }
-
                 .bauhaus-bg-grid {
                     position: absolute; top: 0; left: 0; right: 0; bottom: 0;
                     background-image: linear-gradient(#ddd 1px, transparent 1px), linear-gradient(90deg, #ddd 1px, transparent 1px);
-                    background-size: 40px 40px; opacity: 0.2; z-index: -1;
+                    background-size: 60px 60px; opacity: 0.15; z-index: -1;
                 }
 
-                .grid-outer {
-                    display: grid; grid-template-columns: 280px 1fr 280px; gap: 2rem;
-                    max-width: 1400px; margin: 0 auto; height: 100%; align-items: center;
+                .view-container {
+                    height: 100vh; display: flex; flex-direction: column; padding: 2rem 4rem;
                 }
 
-                .panel { background: white; height: auto; align-self: center; display: flex; flex-direction: column; }
-                .p-tag { padding: 0.6rem; color: white; font-weight: 900; font-size: 0.7rem; text-align: center; }
-                .p-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; }
+                /* HEADER */
+                .system-hdr {
+                    display: flex; justify-content: space-between; align-items: center;
+                    padding-bottom: 2rem; margin-bottom: 2rem;
+                }
+                .hdr-title { font-weight: 900; font-size: 1.2rem; letter-spacing: 0.2em; color: var(--primary-red); }
+                .hdr-meta { display: flex; align-items: center; gap: 1rem; font-weight: 900; font-size: 0.7rem; }
+                .hdr-telemetry { font-weight: 900; font-size: 0.7rem; color: #666; }
+                .pulse { width: 10px; height: 10px; background: var(--primary-red); border-radius: 50%; display: block; }
+                @keyframes pulse-anim { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.5); } 100% { opacity: 1; transform: scale(1); } }
+                .pulse { animation: pulse-anim 1s infinite; }
+
+                /* FIELD */
+                .visualizer-field {
+                    flex-grow: 1; display: flex; flex-direction: column; align-items: center; position: relative;
+                }
+
+                .ingestion-node {
+                    background: white; padding: 1.5rem 3rem; text-align: center; position: relative;
+                    box-shadow: 10px 10px 0px black; transition: transform 0.3s;
+                }
+                .node-caption { font-size: 0.6rem; font-weight: 900; color: #999; margin-bottom: 0.5rem; }
+                .node-icon { font-size: 2rem; margin: 0.5rem 0; }
+                .node-status { font-weight: 900; font-size: 0.7rem; color: var(--primary-blue); }
+
+                /* FLOW */
+                .flow-complex { display: flex; gap: 15rem; width: 100%; justify-content: center; }
+                .channel { position: relative; width: 6px; height: 250px; background: #ddd; }
                 
-                .met { display: flex; flex-direction: column; border-bottom: 2px solid #f9f9f9; }
-                .m-l { font-size: 0.6rem; font-weight: 900; color: #999; }
-                .m-v { font-size: 1.4rem; font-weight: 900; }
+                .beam { position: absolute; top: 0; left: -2px; width: 10px; height: 60px; filter: blur(2px); }
+                .beam-red { background: var(--primary-red); animation: beam-flow 1.5s infinite linear; }
+                .beam-blue { background: var(--primary-blue); animation: beam-flow 2s infinite linear 0.5s; }
 
-                .st-item { font-weight: 900; font-size: 0.8rem; letter-spacing: 0.05em; }
+                @keyframes beam-flow { 0% { top: -60px; opacity: 0; } 50% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
 
-                /* CENTER */
-                .hub-center { text-align: center; display: flex; flex-direction: column; align-items: center; }
-                .hub-header { margin-bottom: 3rem; }
-                .sys-code { font-weight: 900; color: var(--primary-red); letter-spacing: 0.5em; font-size: 0.8rem; margin-bottom: 0.5rem; }
-                .h-xxl { font-weight: 900; font-size: 3.5rem; letter-spacing: -0.05em; margin: 0; }
+                /* CARDS */
+                .intel-card {
+                    position: absolute; left: 30px; width: 280px; opacity: 0; transform: translateX(20px);
+                    transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: white;
+                    padding: 1.5rem; border-left: 5px solid; box-shadow: 5px 5px 0px rgba(0,0,0,0.05);
+                }
+                .intel-card.active { opacity: 1; transform: translateX(0); }
+                .intel-card label { display: block; font-weight: 900; font-size: 0.7rem; margin-bottom: 0.5rem; letter-spacing: 0.1em; }
+                .intel-card p { font-size: 0.9rem; font-weight: 500; margin: 0; line-height: 1.4; }
 
-                /* VISUALIZER */
-                .hub-vis { display: flex; flex-direction: column; align-items: center; }
-                .s-node { padding: 0.6rem 2rem; background: white; font-weight: 900; box-shadow: 6px 6px 0px black; z-index: 10; font-size: 0.8rem; }
+                /* FUSION */
+                .convergence-node { margin-top: 2rem; position: relative; text-align: center; }
+                .node-center { background: white; padding: 2rem 4rem; z-index: 10; position: relative; min-width: 320px; }
+                .fusion-status { font-weight: 900; font-size: 1.2rem; color: #1a1a1a; margin-top: 0.5rem; }
                 
-                .s-flow { display: flex; gap: 6rem; padding-top: 1rem; }
-                .str { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
-                .str-l { width: 4px; height: 140px; background: black; position: relative; overflow: hidden; }
-                .pt { position: absolute; width: 14px; height: 14px; border: 2.5px solid black; left: -7px; }
-                .p-move { animation: s-d 1.1s infinite linear; }
-                .p-move-delay { animation: s-d 1.1s infinite linear 0.5s; }
-                @keyframes s-d { 0% { top: -20px; } 100% { top: 100%; } }
-                .str-t { font-weight: 900; font-size: 0.6rem; color: #666; }
-
-                .f-node { margin-top: 1rem; padding: 1rem 2rem; display: flex; flex-direction: column; align-items: center; gap: 0.8rem; }
-                .f-l { font-weight: 900; font-size: 0.9rem; }
-                .spin { width: 22px; height: 22px; border: 4px solid black; border-top-color: white; border-radius: 50%; animation: rot 1s infinite linear; }
-                @keyframes rot { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-                /* TICKER */
-                .hub-ticker { 
-                    position: fixed; bottom: 3rem; left: 50%; transform: translateX(-50%);
-                    width: auto; min-width: 600px; display: flex; background: white; height: 60px;
+                .fusion-ring {
+                    position: absolute; top: -50px; left: 50%; transform: translateX(-50%);
+                    width: 440px; height: 440px; border: 2px dashed #999; border-radius: 50%;
+                    pointer-events: none; opacity: 0.2;
                 }
-                .t-tag { padding: 0 1.5rem; display: flex; align-items: center; color: white; font-weight: 900; font-size: 0.7rem; }
-                .t-box { flex-grow: 1; padding: 0 2rem; display: flex; align-items: center; font-weight: 900; font-size: 1.1rem; }
+                .fusion-ring.spinning { animation: rot 20s infinite linear; opacity: 0.5; border-color: var(--primary-yellow); }
+                @keyframes rot { from { transform: translateX(-50%) rotate(0deg); } to { transform: translateX(-50%) rotate(360deg); } }
 
-                @media (max-width: 1000px) {
-                    .grid-outer { grid-template-columns: 1fr; }
-                    .panel { display: none; }
-                    .h-xxl { font-size: 2.5rem; }
+                .context-desc {
+                    margin-top: 3rem; font-weight: 900; font-size: 0.9rem; color: var(--primary-red);
+                    max-width: 500px; line-height: 1.4; opacity: 0; transition: opacity 0.5s;
                 }
+                .context-desc.fade-in { opacity: 1; }
 
-                .bg-blue { background: var(--primary-blue); }
+                /* SIDE STACK */
+                .infra-stack-view {
+                    position: fixed; right: 4rem; top: 50%; transform: translateY(-50%); width: 220px;
+                }
+                .stack-row { display: flex; gap: 1rem; border-bottom: 2px solid rgba(0,0,0,0.05); padding: 1rem 0; }
+                .row-num { font-weight: 900; color: #999; font-size: 0.7rem; }
+                .row-val { font-weight: 900; font-size: 0.8rem; }
+
+                /* LOGS */
+                .footer-logs {
+                    display: flex; height: 80px; align-items: center; padding: 0 2rem; background: white;
+                }
+                .log-prefix { height: 100%; display: flex; align-items: center; padding: 0 2rem; color: white; font-weight: 900; font-size: 0.7rem; }
+                .log-msg { flex-grow: 1; padding: 0 3rem; font-weight: 900; font-size: 1.1rem; letter-spacing: -0.02em; }
+                .log-timer { font-weight: 900; font-size: 0.8rem; color: #999; }
+
+                .bauhaus-border-bottom { border-bottom: 4px solid #1a1a1a; }
+                .bauhaus-border-top { border-top: 4px solid #1a1a1a; }
                 .bg-red { background: var(--primary-red); }
             `}</style>
         </div>
