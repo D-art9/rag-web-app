@@ -68,5 +68,42 @@ export const geminiService = {
             console.error('Gemini Chat Error:', error);
             throw new Error('Failed to get response from Gemini API.');
         }
+    },
+
+    async generateStream(prompt: string, onChunk: (chunk: string) => void): Promise<void> {
+        if (!model) throw new Error('Gemini API is not configured.');
+        try {
+            const result = await model.generateContentStream(prompt);
+            for await (const chunk of result.stream) {
+                const chunkText = chunk.text();
+                onChunk(chunkText);
+            }
+        } catch (error) {
+            console.error('Gemini Stream Error:', error);
+            throw new Error('Failed to generate stream from Gemini API.');
+        }
+    },
+
+    async chatStream(history: { role: string, parts: string }[], newMessage: string, onChunk: (chunk: string) => void): Promise<void> {
+        if (!model) throw new Error('Gemini API is not configured.');
+
+        try {
+            const geminiHistory = history.map(h => ({
+                role: h.role === 'ai' ? 'model' : 'user',
+                parts: [{ text: h.parts }]
+            }));
+            while (geminiHistory.length > 0 && geminiHistory[0].role !== 'user') geminiHistory.shift();
+
+            const chat = model.startChat({ history: geminiHistory });
+            const result = await chat.sendMessageStream(newMessage);
+
+            for await (const chunk of result.stream) {
+                const chunkText = chunk.text();
+                onChunk(chunkText);
+            }
+        } catch (error) {
+            console.error('Gemini Stream Error:', error);
+            throw new Error('Failed to stream response from Gemini API.');
+        }
     }
 };

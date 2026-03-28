@@ -38,11 +38,69 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
         setMessages(p => [...p, { text: userMsg, sender: 'user' }]);
         setIsTyping(true);
 
+        // Add a placeholder AI message that we will "fill" with the stream
+        const placeholderAiMsg: Message = { text: '', sender: 'ai' };
+        setMessages(p => [...p, placeholderAiMsg]);
+
         try {
-            const data = await sendMessage(userMsg, videoId);
-            setMessages(p => [...p, { text: data.answer, sender: 'ai', sources: data.sources }]);
+            const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://scriptyt-test-laptop.loca.lt/api';
+            const response = await fetch(`${API_BASE_URL}/chat/stream`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: userMsg, videoId }),
+            });
+
+            if (!response.ok || !response.body) throw new Error('STREAM_FAILURE: Connection rejected');
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let accumulatedText = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const dataStr = line.replace('data: ', '');
+                        try {
+                            const data = JSON.parse(dataStr);
+                            if (data.text) {
+                                accumulatedText += data.text;
+                                // Update the LAST message in the array incrementally
+                                setMessages(prev => {
+                                    const next = [...prev];
+                                    next[next.length - 1] = { ...next[next.length - 1], text: accumulatedText };
+                                    return next;
+                                });
+                            }
+                            if (data.done) {
+                                // Final update with sources
+                                setMessages(prev => {
+                                    const next = [...prev];
+                                    next[next.length - 1] = { ...next[next.length - 1], sources: data.sources };
+                                    return next;
+                                });
+                            }
+                            if (data.error) {
+                                throw new Error(data.error);
+                            }
+                        } catch (e) {
+                            // JSON fragments can happen in rare cases, we ignore or log
+                            console.warn('[STREAM_JSON_PARTIAL]', e);
+                        }
+                    }
+                }
+            }
         } catch (err: any) {
-            setMessages(p => [...p, { text: `### ✗ ERROR\n[ERR_RAG_PIPELINE]: ${err.message}`, sender: 'ai' }]);
+            setMessages(p => {
+                const next = [...p];
+                next[next.length - 1] = { ...next[next.length - 1], text: `### ✗ ERROR\n[ERR_RAG_PIPELINE]: ${err.message}` };
+                return next;
+            });
         } finally {
             setIsTyping(false);
         }

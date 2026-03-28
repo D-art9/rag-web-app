@@ -4,6 +4,7 @@ import { chatController } from '../controllers/chatController';
 const router = express.Router();
 
 router.post('/send', chatController.sendMessage);
+router.post('/stream', chatController.streamMessage);
 router.get('/history', chatController.getChatHistory);
 
 export default router;

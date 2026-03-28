@@ -26,10 +26,8 @@ export const ragPipeline = {
             // 2. Build the augmented prompt
             const contextText = chunks
                 .map((c, i) => {
-                    if (c.content.includes('[VISUAL_CONTEXT_METADATA]')) {
-                        return `--- [VISUAL_METADATA] ---\n${c.content}`;
-                    }
-                    return `--- [AUDIO_SEGMENT_${i+1}] ---\n${c.content}`;
+                    const prefix = c.content.includes('[VISUAL_CONTEXT_METADATA]') ? `--- [VISUAL_METADATA] ---` : `--- [AUDIO_SEGMENT_${i+1}] ---`;
+                    return `${prefix}\n${c.content}`;
                 })
                 .join('\n\n');
 
@@ -60,16 +58,7 @@ SYSTEM_ARCHITECT_RESPONSE_v2.1:`;
             const answer = await generator.generate(augmentedPrompt);
 
             // 4. Extract sources (deduplicated)
-            const citations: string[] = [];
-            const seen = new Set<string>();
-            
-            for (const chunk of chunks) {
-                const label = chunk.metadata?.title || chunk.metadata?.url || 'Source Document';
-                if (!seen.has(label)) {
-                    seen.add(label);
-                    citations.push(label);
-                }
-            }
+            const citations = Array.from(new Set(chunks.map(c => c.metadata?.title || c.metadata?.url || 'Source Video')));
 
             return {
                 answer,
@@ -82,6 +71,51 @@ SYSTEM_ARCHITECT_RESPONSE_v2.1:`;
                 answer: "### ✗ SYSTEM_FAULT\nThe AI pipeline encountered a processing fault. Target video source might be unreachable.",
                 sources: []
             };
+        }
+    },
+
+    /**
+     * High-fidelity stream orchestration for real-time visualization. Flowy Engine.
+     */
+    processStream: async (question: string, contextId: string, onChunk: (chunk: string) => void): Promise<{ sources: string[] }> => {
+        try {
+            const chunks = await retriever.retrieve(question, contextId);
+            const contextText = chunks
+                .map((c, i) => {
+                    const prefix = c.content.includes('[VISUAL_CONTEXT_METADATA]') ? `--- [VISUAL_METADATA] ---` : `--- [AUDIO_SEGMENT_${i+1}] ---`;
+                    return `${prefix}\n${c.content}`;
+                })
+                .join('\n\n');
+
+            const augmentedPrompt = `
+### [ MISSION_DIRECTIVE ]
+You are THE SCRIPTYT_CORE—a high-performance Multimodal Video Intelligence Architect. 
+Your goal is to provide deep, analytical, and human-centric insights by synthesizing Audible and Visual data.
+
+### [ DATA_SOURCE_CONTEXT ]
+---------------------
+${contextText}
+---------------------
+
+### [ OPERATIONAL_RULES ]
+1. **AUTHORITY_MODE:** Do NOT use robot-speak (e.g., "Based on the transcript"). Speak directly: "The speaker emphasizes...", "The visual layout confirms...".
+2. **MULTIMODAL_SYNTHESIS:** You have [AUDIO] and [VISUAL] data. Synergize them.
+3. **BAUHAUS_STRUCTURE:** Use **[BOLD_HEADERS]** and geometric lists (-) for scannable insights.
+4. **CITATIONS:** Append a subtle (// SOURCE: Timestamp) at the end of key facts.
+
+USER_QUERY: ${question}
+
+SYSTEM_ARCHITECT_RESPONSE_v2.1:`;
+
+            await generator.generateStream(augmentedPrompt, onChunk);
+
+            const citations = Array.from(new Set(chunks.map(c => c.metadata?.title || c.metadata?.url || 'Source Video')));
+            return { sources: citations };
+
+        } catch (error) {
+            console.error('RAG Pipeline Stream Error:', error);
+            onChunk("### ✗ SYSTEM_FAULT\nThe AI stream encountered a processing fault.");
+            return { sources: [] };
         }
     }
 };
