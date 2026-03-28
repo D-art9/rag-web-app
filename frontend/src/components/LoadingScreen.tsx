@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 
 const technicalLogs = [
     "[INIT] SYSTEM_CONTACT: ESTABLISHING_YOUTUBE_BRIDGE...",
+    "[SYS] TUNNEL_RECONNECT: STABILIZING_LOCAL_NODE_BRIDGE...",
     "[P1] AUDIO_EXTRACT: DOWNLOADING_AUDIO_STREAMS...",
     "[P1] TEXT_LAYER: GENERATING_TRANSCRIPT_CHUNKS...",
     "[P2] VISION_SYNC: GEMINI_1.5_FLASH_ANALYZING_THUMBNAIL...",
-    "[P2] VISUAL_DESCRIPTION: INJECTING_IMAGE_METADATA_INTO_CHUNK_0...",
+    "[SYS] SYNC: ALIGNING_MULTIMODAL_VECTORS...",
     "[FUSION] VECTOR_CORE: CALCULATING_SEMANTIC_EMBEDDINGS (1536d)...",
     "[DB] MONGODB_SAVE: SECURING_DOCUMENT_STORAGE...",
     "[RAG] MISSION_READY: INITIALIZING_CONSTRUCTIVIST_WORKSPACE..."
@@ -16,11 +17,20 @@ const infraStack = ["MONGODB_ATLAS", "GEMINI_1.5_FLASH", "PINECONE_VEC", "EXPRES
 const LoadingScreen: React.FC<{ message?: string }> = ({ message = "SYSTEM_INGESTION_ACTIVE" }) => {
     const [logIndex, setLogIndex] = useState(0);
     const [counter, setCounter] = useState(256);
+    const [infraStatus, setInfraStatus] = useState("INGESTION_ACTIVE");
 
     useEffect(() => {
         const logInt = setInterval(() => setLogIndex((p) => (p + 1) % technicalLogs.length), 3000);
         const countInt = setInterval(() => setCounter(p => p + Math.floor(Math.random() * 50)), 500);
-        return () => { clearInterval(logInt); clearInterval(countInt); };
+        
+        // After 7 seconds, if still loading, show the "Warming Up" message
+        const statusT = setTimeout(() => setInfraStatus("WARMING_UP_LOCAL_CORES"), 7000);
+
+        return () => { 
+            clearInterval(logInt); 
+            clearInterval(countInt); 
+            clearTimeout(statusT);
+        };
     }, []);
 
     return (
@@ -52,7 +62,7 @@ const LoadingScreen: React.FC<{ message?: string }> = ({ message = "SYSTEM_INGES
                 {/* CENTER HUB */}
                 <main className="hub-center">
                     <header className="hub-header">
-                        <div className="sys-code">SCRIPTYT_v2.1_CORE</div>
+                        <div className="sys-code">SCRIPTYT_v2.1_CORE // {infraStatus}</div>
                         <h1 className="h-xxl">SYSTEM_CONVERGENCE</h1>
                     </header>
 
