@@ -65,10 +65,10 @@ const App: React.FC = () => {
 
       {/* ASYMMETRIC NAVIGATION PANEL */}
       <nav className="bauhaus-nav bauhaus-border">
-         <div className="brand-logo">
-            <Circle className="logo-shape" fill="var(--primary-red)" color="transparent" size={24} />
-            <Square className="logo-shape" fill="var(--primary-blue)" color="transparent" size={24} />
-            <Triangle className="logo-shape" fill="var(--primary-yellow)" color="transparent" size={24} />
+         <div className="brand-logo-home" onClick={() => setView('hero')}>
+            <Circle className="logo-shape" fill="var(--primary-red)" color="transparent" size={30} />
+            <Square className="logo-shape" fill="var(--primary-blue)" color="transparent" size={30} />
+            <Triangle className="logo-shape" fill="var(--primary-yellow)" color="transparent" size={30} />
             <div className="logo-text">SCRIPTYT</div>
          </div>
 
@@ -159,16 +159,21 @@ const App: React.FC = () => {
           transition: transform 0.3s ease-in-out, background 0.4s ease;
         }
 
-        .brand-logo {
-          padding: 2.5rem 2rem;
+        .brand-logo-home {
+          padding: 2.5rem 1.5rem;
           display: flex;
           align-items: center;
           gap: 0.5rem;
           border-bottom: 4px solid var(--border-color);
           background: var(--pane-bg);
+          cursor: pointer;
+          transition: background 0.2s;
         }
+        .brand-logo-home:hover { background: rgba(0,0,0,0.02); }
+        .logo-shape { transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .brand-logo-home:hover .logo-shape { transform: scale(1.2); }
         
-        .logo-text { font-weight: 900; font-size: 1.2rem; letter-spacing: -0.05em; margin-left: 0.5rem; }
+        .logo-text { font-weight: 900; font-size: 1.4rem; letter-spacing: -0.05em; margin-left: 0.5rem; }
 
         .nav-links { flex-grow: 1; padding: 1rem 0; }
         
