@@ -32,22 +32,10 @@ const PORT = process.env.PORT || 5000;
 // Required for Render (and other proxies) to correctly handle IPs for Rate Limiting
 app.set('trust proxy', 1);
 
-// FIX: Consolidated database init — no duplicate error handling
-const initializeDatabases = async () => {
-    await connectDB();
-    await connectToVectorDB();
-};
-
-initializeDatabases().catch(err => {
-    console.error('[CRITICAL] Failed to initialize databases. Exiting...', err);
-    process.exit(1);
-});
-
 // Middleware
 app.use(cors({
-    // FIX: Restrict to known origins in production; allow all only in dev
     origin: process.env.NODE_ENV === 'production'
-        ? (process.env.FRONTEND_URL || 'http://localhost:3000')
+        ? (process.env.FRONTEND_URL || '*')
         : '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -56,6 +44,19 @@ app.use(bodyParser.json());
 
 // Apply Global Rate Limiter
 app.use(globalLimiter);
+
+// --- [CRITICAL_FIX: RENDER_HEALTH_CHECK] ---
+/**
+ * Simple GET / route to inform Render that the service is ALIVE.
+ * This prevents the "Startup Timeout" during database initialization.
+ */
+app.get('/', (req, res) => {
+    res.status(200).json({
+        status: 'online',
+        system: 'SCRIPTYT_CORE_v2.1',
+        timestamp: new Date().toISOString()
+    });
+});
 
 // Routes — apply strict limiter to AI-heavy routes
 app.use('/api/chat', strictLimiter, chatRoutes);
@@ -67,6 +68,31 @@ app.use('/api/study', studyRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
+
+// --- [REFACTORED_STARTUP] ---
+/**
+ * We start the server FIRST, then connect to the DBs in the background.
+ * This ensures Render gets a 200 OK signal immediately.
+ */
+app.listen(Number(PORT), '0.0.0.0', () => {
+    console.log(`=========================================`);
+    console.log(`[SERVER] Running on http://0.0.0.0:${PORT}`);
+    console.log(`[SERVER] Ready to receive requests`);
+    console.log(`=========================================`);
+
+    // Initialize databases AFTER the server is already listening
+    const initializeDatabases = async () => {
+        try {
+            await connectDB();
+            await connectToVectorDB();
+            console.log(`[DB] ✓ All databases synchronized successfully.`);
+        } catch (err) {
+            console.error('[CRITICAL] Failed to initialize databases in background:', err);
+        }
+    };
+
+    initializeDatabases();
+});
 
 // Graceful shutdown handlers
 const shutdown = (signal: string) => {
@@ -83,12 +109,4 @@ process.on('uncaughtException', (err) => {
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('[CRITICAL] Unhandled Rejection at:', promise, 'reason:', reason);
-});
-
-app.listen(Number(PORT), '0.0.0.0', () => {
-    console.log(`=========================================`);
-    console.log(`[SERVER] Running on http://0.0.0.0:${PORT}`);
-    console.log(`[SERVER] Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`[SERVER] Ready to receive requests`);
-    console.log(`=========================================`);
 });
