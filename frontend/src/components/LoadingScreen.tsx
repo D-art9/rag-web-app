@@ -54,8 +54,11 @@ const LoadingScreen: React.FC<{ message?: string }> = ({ message = "SYSTEM_INGES
                         <span className="dot pulse"></span>
                         <span className="st-txt">MISSION_ACTIVE: {message}</span>
                     </div>
-                    <div className="hdr-title">SCRIPTYT_v2.1_CORE // {infraStatus}</div>
-                    <div className="hdr-telemetry">CPU_READY: {counter} // VEC_DIM: 1536d</div>
+                    <div className="hdr-title-group">
+                        <div className="hdr-title">SCRIPTYT_v2.1_CORE {" // "} {infraStatus}</div>
+                        <h1 className="h-xxl">SYSTEM_CONVERGENCE</h1>
+                    </div>
+                    <div className="hdr-telemetry">CPU_READY: {counter} {" // "} VEC_DIM: 1536d</div>
                 </header>
 
                 {/* THE CORE VISUALIZER ENGINE */}
@@ -141,9 +144,12 @@ const LoadingScreen: React.FC<{ message?: string }> = ({ message = "SYSTEM_INGES
                     display: flex; justify-content: space-between; align-items: center;
                     padding-bottom: 2rem; margin-bottom: 2rem;
                 }
-                .hdr-title { font-weight: 900; font-size: 1.2rem; letter-spacing: 0.2em; color: var(--primary-red); }
-                .hdr-meta { display: flex; align-items: center; gap: 1rem; font-weight: 900; font-size: 0.7rem; }
-                .hdr-telemetry { font-weight: 900; font-size: 0.7rem; color: #666; }
+                .hdr-title-group { text-align: center; flex-grow: 1; }
+                .hdr-title { font-weight: 900; font-size: 1.2rem; letter-spacing: 0.2em; color: var(--primary-red); margin-bottom: 0.5rem; }
+                .hdr-meta { display: flex; align-items: center; gap: 1rem; font-weight: 900; font-size: 0.7rem; width: 300px; }
+                .hdr-telemetry { font-weight: 900; font-size: 0.7rem; color: #666; width: 300px; text-align: right; }
+                .h-xxl { font-weight: 900; font-size: 3.5rem; letter-spacing: -0.05em; margin: 0; line-height: 1; }
+
                 .pulse { width: 10px; height: 10px; background: var(--primary-red); border-radius: 50%; display: block; }
                 @keyframes pulse-anim { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.5); } 100% { opacity: 1; transform: scale(1); } }
                 .pulse { animation: pulse-anim 1s infinite; }
