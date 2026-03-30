@@ -10,10 +10,10 @@ let model: any = null;
 
 if (API_KEY) {
     genAI = new GoogleGenerativeAI(API_KEY);
-    // Using gemini-1.5-flash-latest for high quota availability on the free tier.
-    // This resolves the 429 Quota Exceeded error seen on the v2.0-lite model.
-    model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
-    console.log('[GEMINI] ✓ SYSTEM_READY: Flash-Latest brain online (v1.5 stable).');
+    // Locked into gemini-2.5-flash which is the explicitly verified model for this key.
+    // This resolves the 404 Not Found error for previous 1.5/2.0 versions.
+    model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    console.log('[GEMINI] ✓ SYSTEM_READY: 2.5 Core Brain online.');
 } else {
     console.error('[CRITICAL] GEMINI_API_KEY is not set. All AI features will be locked.');
 }

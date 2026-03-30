@@ -11,8 +11,8 @@ let visionModel: any = null;
 
 if (API_KEY) {
     genAI = new GoogleGenerativeAI(API_KEY);
-    // Using 1.5-flash-latest for stable vision analysis on free tier.
-    visionModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    // Synchronized with the 2.5 core for unified multimodal consistency.
+    visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 }
 
 export const visionService = {
