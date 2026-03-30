@@ -63,7 +63,7 @@ async def extract_video(request: VideoRequest):
         except:
             transcript = transcript_list.find_generated_transcript(['en'])
             
-        transcript_text = " ".join([t['text'] for t in transcript.fetch()])
+        transcript_text = " ".join([t.text for t in transcript.fetch()])
         
         # Metadata check (less likely to block than full stream)
         metadata = {"title": f"Video_{video_id}", "thumbnail": f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg", "uploader": "YouTube"}
