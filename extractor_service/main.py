@@ -53,12 +53,19 @@ async def extract_video(request: VideoRequest):
     # [TIER_01] DEDICATED_TRANSCRIPT_API (Resilient Path)
     try:
         logger.info(f"[TIER_01] Attempting Specialized CC API for: {video_id}")
-        # The API fetch doesn't usually trigger the Bot-Wall
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=['en', 'en-GB'])
-        transcript_text = " ".join([t['text'] for t in transcript_list])
+        # FIX: Instantiate the API class to resolve "no attribute 'get_transcript'" error
+        api = YouTubeTranscriptApi()
+        transcript_list = api.list_transcripts(video_id)
         
-        # We still need metadata (title/thumb) from yt-dlp but it's less likely to block
-        # just for a metadata check than a full stream download
+        # Priority: Manual English -> Auto English
+        try:
+            transcript = transcript_list.find_transcript(['en'])
+        except:
+            transcript = transcript_list.find_generated_transcript(['en'])
+            
+        transcript_text = " ".join([t['text'] for t in transcript.fetch()])
+        
+        # Metadata check (less likely to block than full stream)
         metadata = {"title": f"Video_{video_id}", "thumbnail": f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg", "uploader": "YouTube"}
         
         logger.info(f"[SUCCESS] Extraction verified via TIER_01")
