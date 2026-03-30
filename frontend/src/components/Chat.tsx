@@ -113,21 +113,20 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
     };
 
     return (
-        <div className={`layout-root ${isExpanded ? 'expanded' : ''}`}>
+        <div className={`chat-layout ${isExpanded ? 'expanded' : ''}`}>
             {/* 01_SOURCE_ENGINE: Vision & Metadata */}
             {!isExpanded && (
-                <aside className="sidebar">
+                <aside className="video-info-aside">
                     <div className="industrial-label">01_SOURCE_FEED</div>
                     
-                    <div className="glass-card" style={{ padding: '4px', overflow: 'hidden' }}>
+                    <div className="thumbnail-box">
                         <img 
                             src={`https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`} 
                             alt="SOURCE" 
-                            style={{ width: '100%', borderRadius: '4px', display: 'block' }}
                         />
                     </div>
                     
-                    <div className="glass-card" style={{ marginTop: 'var(--grid-gap)' }}>
+                    <div className="glass-card" style={{ marginTop: '24px', padding: '16px' }}>
                         <div className="industrial-label" style={{ marginBottom: '8px' }}>METADATA_STREAM</div>
                         <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '2' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -141,8 +140,8 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
                         </div>
                     </div>
 
-                    <div style={{ marginTop: 'auto', padding: '12px' }}>
-                        <div className="industrial-label" style={{ background: 'rgba(255,255,255,0.03)', padding: '8px' }}>
+                    <div style={{ marginTop: 'auto' }}>
+                        <div className="industrial-label" style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', marginBottom: 0 }}>
                             <span style={{ color: 'var(--accent-red)' }}>●</span> ENCRYPTED_SYNC
                         </div>
                     </div>
