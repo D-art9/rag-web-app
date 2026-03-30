@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import LandingPage from './components/LandingPage';
 import Chat from './components/Chat';
-import SearchPlayground from './components/SearchPlayground';
 import Dataflow from './components/Dataflow';
-import ContactPage from './components/ContactPage';
 import HeroLanding from './components/HeroLanding';
+import HistoryPage from './components/HistoryPage';
 import { Circle, Square, Triangle, Menu, X, Sun, Moon } from 'lucide-react';
 import './index.css';
 
-type View = 'hero' | 'landing' | 'chat' | 'dataflow' | 'contact' | 'playground';
+type View = 'hero' | 'landing' | 'chat' | 'history' | 'dataflow';
 
 const App: React.FC = () => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -50,10 +49,11 @@ const App: React.FC = () => {
   };
 
   const navItems = [
-    { id: 'hero', label: '00_HOME', color: 'var(--primary-red)' },
-    { id: 'landing', label: '01_START', color: 'var(--primary-red)' },
-    { id: 'chat', label: '02_WORKSPACE', color: 'var(--primary-blue)' },
-    { id: 'playground', label: '03_EXPLORE', color: 'var(--primary-yellow)' },
+    { id: 'hero', label: '00_HOME', color: 'var(--accent-red)' },
+    { id: 'landing', label: '01_START', color: 'var(--accent-red)' },
+    { id: 'chat', label: '02_WORKSPACE', color: 'var(--accent-blue)' },
+    { id: 'history', label: '03_HISTORY', color: 'var(--accent-yellow)' },
+    { id: 'dataflow', label: '04_DATAFLOW', color: 'var(--accent-cyan)' },
   ];
 
   return (
@@ -96,7 +96,8 @@ const App: React.FC = () => {
       <main className="workspace-container" style={{ background: 'var(--bg-core)' }}>
         {currentView === 'hero' && <HeroLanding onOpenAnalyzer={() => setView('landing')} />}
         {currentView === 'landing' && <LandingPage onUrlSubmit={handleUrlSubmit} onNavigate={(v: any) => setView(v)} />}
-        {currentView === 'playground' && <SearchPlayground onResultClick={handleResultClick} />}
+        {currentView === 'history' && <HistoryPage onSelectVideo={(id, url) => { setDocId(id); setVideoUrl(url); setView('chat'); }} />}
+        {currentView === 'dataflow' && <Dataflow />}
         {currentView === 'chat' && (
           <div style={{ height: '100%', width: '100%' }}>
             {videoUrl ? (
@@ -114,122 +115,6 @@ const App: React.FC = () => {
         )}
       </main>
 
-      <style>{`
-        .bauhaus-root {
-          display: grid;
-          grid-template-columns: 320px 1fr;
-          height: 100vh;
-          width: 100vw;
-          background: var(--bg-color);
-          color: var(--foreground);
-          overflow: hidden;
-          position: relative;
-        }
-
-        /* NAVIGATION */
-        .bauhaus-nav {
-          background: var(--pane-bg);
-          border-right: 4px solid var(--border-color);
-          display: flex;
-          flex-direction: column;
-          z-index: 100;
-          transition: transform 0.3s ease-in-out, background 0.4s ease;
-        }
-
-        .brand-logo-home {
-          padding: 2.5rem 1.5rem;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          border-bottom: 4px solid var(--border-color);
-          background: var(--pane-bg);
-          cursor: pointer;
-          transition: background 0.2s;
-        }
-        .brand-logo-home:hover { background: rgba(0,0,0,0.02); }
-        .logo-shape { transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .brand-logo-home:hover .logo-shape { transform: scale(1.2); }
-        
-        .logo-text { font-weight: 900; font-size: 1.4rem; letter-spacing: -0.05em; margin-left: 0.5rem; }
-
-        .nav-links { flex-grow: 1; padding: 1rem 0; }
-        
-        .nav-btn {
-          width: 100%;
-          border: none;
-          background: transparent;
-          text-align: left;
-          padding: 1.2rem 2rem;
-          cursor: pointer;
-          display: flex;
-          flex-direction: column;
-          color: var(--foreground);
-          transition: all 0.2s;
-          border-bottom: 2px solid transparent;
-        }
-
-        .nav-btn:hover { background: rgba(0,0,0,0.02); padding-left: 2.5rem; }
-        .nav-btn.active {
-          background: var(--accent-color);
-          color: white;
-          border-bottom: 4px solid var(--border-color);
-        }
-        
-        .btn-index { font-weight: 900; font-size: 0.7rem; margin-bottom: 0.1rem; }
-        .btn-label { font-weight: 900; font-size: 1.3rem; text-transform: uppercase; }
-
-        .nav-footer { padding: 1.5rem; border-top: 4px solid var(--border-color); display: flex; flex-direction: column; gap: 1rem; }
-        .status-badge { font-weight: 900; font-size: 0.7rem; color: var(--foreground); opacity: 0.5; }
-
-        .theme-toggle {
-            display: flex; align-items: center; gap: 0.5rem; 
-            padding: 0.8rem 1rem; cursor: pointer;
-            background: var(--pane-bg); color: var(--foreground);
-            font-weight: 900; font-size: 0.7rem; text-transform: uppercase;
-            transition: all 0.2s;
-        }
-        .theme-toggle:hover { background: var(--foreground); color: var(--pane-bg); }
-
-        /* MOBILE OVERRIDES */
-        .mobile-menu-trigger {
-          display: none;
-          position: absolute;
-          top: 1rem; right: 1rem;
-          background: var(--primary-red);
-          color: white;
-          padding: 0.5rem;
-          z-index: 200;
-        }
-
-        /* VIEWPORT */
-        .bauhaus-viewport {
-          height: 100%;
-          overflow-y: auto;
-          position: relative;
-        }
-
-        .viewport-container { padding: 0; height: 100%; }
-
-        .empty-bauhaus {
-          background: var(--pane-bg);
-          padding: 4rem 2rem;
-          max-width: 650px;
-          margin: 4rem auto;
-          text-align: center;
-          box-shadow: 12px 12px 0px 0px var(--border-color);
-        }
-
-        @media (max-width: 900px) {
-          .bauhaus-root { grid-template-columns: 1fr; }
-          .bauhaus-nav { 
-             position: absolute; transform: translateX(-100%); 
-             height: 100%; width: 280px; 
-          }
-          .bauhaus-root.menu-open .bauhaus-nav { transform: translateX(0); }
-          .mobile-menu-trigger { display: flex; }
-          .viewport-container { padding: 1rem; padding-top: 5rem; }
-        }
-      `}</style>
     </div>
   );
 };

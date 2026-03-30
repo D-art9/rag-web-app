@@ -1,137 +1,54 @@
 import React from 'react';
+import { Share2, Zap, Database, Cpu, Search, Activity } from 'lucide-react';
 
-interface DataflowProps {
-    onBack: () => void;
-}
+const Dataflow: React.FC = () => {
+    const steps = [
+        { icon: <Share2 />, title: '01_INGESTION', desc: 'Secure DNA extraction via Python Bridge (yt-dlp) and Localtunnel.' },
+        { icon: <Activity />, title: '02_EXTRACTION', desc: 'Dialect-aware transcript retrieval with Fuzzy-Language-Bridge logic (en-IN/GB/US).' },
+        { icon: <Database />, title: '03_VECTORIZATION', desc: 'Cloud-TPU batch embedding using gemini-embedding-001 (TPU Optimized).' },
+        { icon: <Search />, title: '04_NEURAL_RECALL', desc: 'Cosine similarity recall with hard-filtered bias for ultra-low hallucinations.' },
+        { icon: <Cpu />, title: '05_SYNTHESIS', desc: 'Multimodal reasoning engine powered by Gemini 2.5 Flash Core.' },
+        { icon: <Zap />, title: '06_STREAM_FLUIDITIY', desc: 'Real-time SSE event delivery with non-blocking auto-scroll containment.' }
+    ];
 
-const Dataflow: React.FC<DataflowProps> = ({ onBack }) => {
     return (
-        <div className="fade-in" style={styles.container}>
-            <div className="mesh-bg"></div>
+        <div className="scroll-panel" style={{ padding: 'var(--grid-gap)' }}>
+            <div className="industrial-label" style={{ marginBottom: '40px', fontSize: '18px' }}>05_SYSTEM_SCHEMATICS</div>
+            
+            <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {steps.map((step, i) => (
+                    <React.Fragment key={i}>
+                        <div className="glass-card" style={{ 
+                            display: 'flex', gap: '24px', alignItems: 'center',
+                            borderLeft: '4px solid var(--accent-cyan)'
+                        }}>
+                            <div style={{ color: 'var(--accent-cyan)', opacity: 0.8 }}>
+                                {step.icon}
+                            </div>
+                            <div>
+                                <div className="industrial-label" style={{ margin: 0, color: 'white' }}>{step.title}</div>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '4px' }}>{step.desc}</p>
+                            </div>
+                            <div style={{ marginLeft: 'auto', fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                                STEP_0{i + 1}
+                            </div>
+                        </div>
+                        {i < steps.length - 1 && (
+                            <div style={{ 
+                                height: '24px', width: '2px', background: 'var(--border-light)', 
+                                margin: '0 44px', borderLeft: '1px dashed rgba(0,242,255,0.2)' 
+                            }} />
+                        )}
+                    </React.Fragment>
+                ))}
+            </div>
 
-            <header style={styles.header}>
-                <button onClick={onBack} style={styles.backButton}>← Back</button>
-                <h1 style={styles.title}>The Magic Under the Hood 🪄</h1>
-            </header>
-
-            <div style={styles.flowContainer}>
-                {/* Step 1: Input */}
-                <div className="slide-in" style={{ ...styles.stepCard, animationDelay: '0.1s' }}>
-                    <div style={styles.icon}>🔗</div>
-                    <h3>1. Input</h3>
-                    <p>User provides a YouTube URL.</p>
-                </div>
-
-                <div className="fade-in" style={{ ...styles.arrow, animationDelay: '0.2s' }}>↓</div>
-
-                {/* Step 2: Extraction */}
-                <div className="slide-in" style={{ ...styles.stepCard, animationDelay: '0.3s' }}>
-                    <div style={styles.icon}>⬇️</div>
-                    <h3>2. Extraction (yt-dlp)</h3>
-                    <p>We use <strong>yt-dlp</strong> to securely extract transcript data and metadata directly from YouTube's internal API.</p>
-                </div>
-
-                <div className="fade-in" style={{ ...styles.arrow, animationDelay: '0.4s' }}>↓</div>
-
-                {/* Step 3: Chunking */}
-                <div className="slide-in" style={{ ...styles.stepCard, animationDelay: '0.5s' }}>
-                    <div style={styles.icon}>✂️</div>
-                    <h3>3. Smart Chunking</h3>
-                    <p>Transcripts are split into <strong>800-character segments</strong> to preserve context while fitting into vector windows.</p>
-                </div>
-
-                <div className="fade-in" style={{ ...styles.arrow, animationDelay: '0.6s' }}>↓</div>
-
-                {/* Step 4: Embedding */}
-                <div className="slide-in" style={{ ...styles.stepCard, animationDelay: '0.7s' }}>
-                    <div style={styles.icon}>🔢</div>
-                    <h3>4. Vectorization</h3>
-                    <p>Each chunk is converted into a 384-dimensional vector using the <strong>all-MiniLM-L6-v2</strong> model.</p>
-                </div>
-
-                <div className="fade-in" style={{ ...styles.arrow, animationDelay: '0.8s' }}>↓</div>
-
-                {/* Step 5: Retrieval */}
-                <div className="slide-in" style={{ ...styles.stepCard, animationDelay: '0.9s' }}>
-                    <div style={styles.icon}>🔍</div>
-                    <h3>5. Semantic Search</h3>
-                    <p>When you ask a question, we compare your query's vector against the database to find the top relevant chunks (Cosine Similarity &gt; 0.15).</p>
-                </div>
-
-                <div className="fade-in" style={{ ...styles.arrow, animationDelay: '1.0s' }}>↓</div>
-
-                {/* Step 6: Synthesis */}
-                <div className="slide-in" style={{ ...styles.stepCard, animationDelay: '1.1s', borderColor: 'var(--accent-color)' }}>
-                    <div style={styles.icon}>🤖</div>
-                    <h3>6. LLM Synthesis</h3>
-                    <p>Groq (Llama 3) reads the retrieved context and generates a precise, natural language answer.</p>
-                </div>
+            <div className="glass-card" style={{ marginTop: '60px', opacity: 0.5, textAlign: 'center' }}>
+                <div className="industrial-label">HARDWARE_LOCK: VERIFIED</div>
+                <p style={{ fontSize: '11px' }}>System running on unified Render Cloud with Persistent Python Extractor Tunnel.</p>
             </div>
         </div>
     );
-};
-
-const styles: { [key: string]: React.CSSProperties } = {
-    container: {
-        minHeight: '100vh',
-        padding: '2rem',
-        color: 'white',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-    },
-    header: {
-        width: '100%',
-        maxWidth: '800px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-        marginBottom: '4rem',
-    },
-    backButton: {
-        position: 'absolute',
-        left: 0,
-        background: 'rgba(255,255,255,0.1)',
-        border: 'none',
-        color: 'white',
-        padding: '0.5rem 1rem',
-        borderRadius: '8px',
-        cursor: 'pointer',
-    },
-    title: {
-        fontSize: '2.5rem',
-        fontWeight: 800,
-        textAlign: 'center',
-    },
-    flowContainer: {
-        maxWidth: '600px',
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '1rem',
-        paddingBottom: '4rem',
-    },
-    stepCard: {
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.1)',
-        padding: '2rem',
-        borderRadius: '16px',
-        width: '100%',
-        textAlign: 'center',
-        backdropFilter: 'blur(10px)',
-        transition: 'transform 0.3s ease',
-    },
-    icon: {
-        fontSize: '2.5rem',
-        marginBottom: '1rem',
-    },
-    arrow: {
-        fontSize: '2rem',
-        color: 'var(--accent-color)',
-        opacity: 0.8,
-    },
 };
 
 export default Dataflow;
