@@ -21,7 +21,7 @@ export const transcriptService = {
                 const isRetryable = status === 502 || status === 503 || status === 504 || !status; // !status captures timeouts/network drops
 
                 if (i < retries - 1 && isRetryable) {
-                    console.warn(`[INGEST] Node blink (Status: ${status}). Retrying in ${delay/1000}s... (Attempt ${i + 1}/${retries})`);
+                    console.warn(`[INGEST] Node blink (Status: ${status}) on ${url}. Retrying in ${delay/1000}s... (Attempt ${i + 1}/${retries})`);
                     await new Promise(res => setTimeout(res, delay * (i + 1))); // Incremental delay
                     continue;
                 }
@@ -44,7 +44,7 @@ export const transcriptService = {
             throw new Error('EXTRACTOR_SERVICE_URL is not defined in environment variables.');
         }
 
-        console.log(`[INGEST] Attempting extraction (PRIMARY) for: ${videoUrl}`);
+        console.log(`[INGEST] Attempting extraction (PRIMARY) via: ${primaryUrl} for: ${videoUrl}`);
 
         try {
             // First attempt to Primary with internal retry logic
