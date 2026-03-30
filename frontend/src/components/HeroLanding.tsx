@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, ArrowRight, Circle, Square, Triangle, Activity, Zap, Cpu } from 'lucide-react';
+import { ArrowRight, Circle, Square, Triangle, Activity, Zap, Cpu } from 'lucide-react';
 
 interface HeroLandingProps {
     onOpenAnalyzer: () => void;
@@ -75,13 +75,24 @@ const HeroLanding: React.FC<HeroLandingProps> = ({ onOpenAnalyzer }) => {
                 </div>
                 
                 <div className="video-viewport bauhaus-border bauhaus-shadow">
-                    <div className="viewport-overlay">
-                         <div className="play-button-bauhaus">
-                            <Play size={40} fill="white" color="white" />
-                         </div>
-                         <div className="viewport-tag">SYSTEM_O_V_01.MP4</div>
+                    <video
+                        src="/demo.mp4"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            display: 'block',
+                            position: 'absolute',
+                            top: 0, left: 0
+                        }}
+                    />
+                    <div className="viewport-overlay" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.15)', display: 'flex', alignItems: 'flex-end', padding: '1rem', pointerEvents: 'none' }}>
+                        <div className="viewport-tag">SYSTEM_O_V_01.MP4 ● LIVE</div>
                     </div>
-                    <div className="video-placeholder-bg"></div>
                 </div>
             </section>
 
@@ -149,7 +160,7 @@ const HeroLanding: React.FC<HeroLandingProps> = ({ onOpenAnalyzer }) => {
 
                 /* DEMO FIXes */
                 .demo-section { max-width: 1100px; margin: 2rem auto; padding: 0 2rem; }
-                .video-viewport { aspect-ratio: 16/9; background: #111; position: relative; }
+                .video-viewport { aspect-ratio: 16/9; background: #111; position: relative; overflow: hidden; }
 
                 /* BOTTOM CARDS FIXes */
                 .hero-nav-blocks { 
