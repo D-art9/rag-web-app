@@ -37,12 +37,9 @@ export const transcriptService = {
      * 2. Fallback to a secondary service if primary is truly down or rate-limited.
      */
     extractAll: async (videoUrl: string): Promise<{ transcript: string; title: string; thumbnail: string }> => {
-        const primaryUrl = process.env.EXTRACTOR_SERVICE_URL;
+        // TEMPORARY_TUNNEL_SYNC: Using v2 subdomain while primary is in cooldown
+        const primaryUrl = process.env.EXTRACTOR_SERVICE_URL || 'https://scriptyt-node-v2.loca.lt';
         const fallbackUrl = process.env.EXTRACTOR_FALLBACK_URL;
-
-        if (!primaryUrl) {
-            throw new Error('EXTRACTOR_SERVICE_URL is not defined in environment variables.');
-        }
 
         console.log(`[INGEST] Attempting extraction (PRIMARY) via: ${primaryUrl} for: ${videoUrl}`);
 
