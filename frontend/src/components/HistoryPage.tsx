@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { Play, Trash2, Calendar, Clock } from 'lucide-react';
 
@@ -20,11 +20,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ onSelectVideo }) => {
 
     const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://scriptyt-test-laptop.loca.lt/api';
 
-    useEffect(() => {
-        fetchHistory();
-    }, []);
-
-    const fetchHistory = async () => {
+    const fetchHistory = useCallback(async () => {
         try {
             const res = await axios.get(`${API_BASE_URL}/documents`);
             setDocuments(res.data.documents || []);
@@ -33,7 +29,11 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ onSelectVideo }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [API_BASE_URL]);
+
+    useEffect(() => {
+        fetchHistory();
+    }, [fetchHistory]);
 
     const handleDelete = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation();

@@ -4,7 +4,7 @@ import Chat from './components/Chat';
 import Dataflow from './components/Dataflow';
 import HeroLanding from './components/HeroLanding';
 import HistoryPage from './components/HistoryPage';
-import { Circle, Square, Triangle, Menu, X, Sun, Moon } from 'lucide-react';
+import { Circle, Square, Triangle } from 'lucide-react';
 import './index.css';
 
 type View = 'hero' | 'landing' | 'chat' | 'history' | 'dataflow';
@@ -15,9 +15,6 @@ const App: React.FC = () => {
   const [ytId, setYtId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<View>('hero');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  const toggleTheme = () => setIsDarkMode(prev => !prev);
 
   const setView = (v: View) => {
     setCurrentView(v);
@@ -36,15 +33,6 @@ const App: React.FC = () => {
     setView('chat');
   };
 
-  const handleResultClick = (id: string, url: string, title: string, thumb: string) => {
-    let youtubeId = '';
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    if (match && match[2].length === 11) youtubeId = match[2];
-
-    setVideoUrl(url);
-    setDocId(id);
-    setYtId(youtubeId);
     setView('chat');
   };
 
