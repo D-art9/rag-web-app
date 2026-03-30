@@ -33,9 +33,6 @@ const App: React.FC = () => {
     setView('chat');
   };
 
-    setView('chat');
-  };
-
   const navItems = [
     { id: 'hero', label: '00_HOME', color: 'var(--accent-red)' },
     { id: 'landing', label: '01_START', color: 'var(--accent-red)' },
