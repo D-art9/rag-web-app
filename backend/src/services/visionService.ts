@@ -11,8 +11,8 @@ let visionModel: any = null;
 
 if (API_KEY) {
     genAI = new GoogleGenerativeAI(API_KEY);
-    // Use gemini-pro-vision (1.0) for stable visual synchronization.
-    visionModel = genAI.getGenerativeModel({ model: 'gemini-pro-vision' });
+    // Using 2.0-flash-lite for consistency across the multimodal stack.
+    visionModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
 }
 
 export const visionService = {

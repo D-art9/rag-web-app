@@ -10,10 +10,10 @@ let model: any = null;
 
 if (API_KEY) {
     genAI = new GoogleGenerativeAI(API_KEY);
-    // FIX: Using gemini-pro (1.0) for maximum stability across all API keys and regions.
-    // This resolves the 404 Not Found error seen on newer flash models for some keys.
-    model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-    console.log('[GEMINI] ✓ SYSTEM_READY: Pro brain online (v1.0 stable).');
+    // Updated to gemini-2.0-flash-lite based on diagnostic scan of this specific API key.
+    // This resolves the 404 Not Found error for gemini-pro/1.5-flash.
+    model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
+    console.log('[GEMINI] ✓ SYSTEM_READY: Flash-Lite brain online (v2.0).');
 } else {
     console.error('[CRITICAL] GEMINI_API_KEY is not set. All AI features will be locked.');
 }
