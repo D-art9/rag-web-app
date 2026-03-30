@@ -77,8 +77,7 @@ const HeroLanding: React.FC<HeroLandingProps> = ({ onOpenAnalyzer }) => {
                 <div className="video-viewport bauhaus-border bauhaus-shadow">
                     <video
                         src="/demo.mp4"
-                        autoPlay
-                        muted
+                        controls
                         loop
                         playsInline
                         style={{
@@ -90,9 +89,6 @@ const HeroLanding: React.FC<HeroLandingProps> = ({ onOpenAnalyzer }) => {
                             top: 0, left: 0
                         }}
                     />
-                    <div className="viewport-overlay" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.15)', display: 'flex', alignItems: 'flex-end', padding: '1rem', pointerEvents: 'none' }}>
-                        <div className="viewport-tag">SYSTEM_O_V_01.MP4 ● LIVE</div>
-                    </div>
                 </div>
             </section>
 
