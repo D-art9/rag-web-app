@@ -10,8 +10,9 @@ let model: any = null;
 
 if (API_KEY) {
     genAI = new GoogleGenerativeAI(API_KEY);
-    model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    console.log('[GEMINI] ✓ SYSTEM_READY: Multimodal brain online.');
+    // FIX: Force 'v1' stable API to prevent 'v1beta' 404 errors on gemini-1.5-flash
+    model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' }, { apiVersion: 'v1' } as any);
+    console.log('[GEMINI] ✓ SYSTEM_READY: Multimodal brain online (v1 stable).');
 } else {
     console.error('[CRITICAL] GEMINI_API_KEY is not set. All AI features will be locked.');
 }
