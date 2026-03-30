@@ -112,7 +112,8 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
         }
     };
 
-    retu        <div className={`layout-root ${isExpanded ? 'expanded' : ''}`}>
+    return (
+        <div className={`layout-root ${isExpanded ? 'expanded' : ''}`}>
             {/* 01_SOURCE_ENGINE: Vision & Metadata */}
             {!isExpanded && (
                 <aside className="sidebar">
@@ -147,7 +148,6 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
                     </div>
                 </aside>
             )}
-  )}
 
             {/* 02_WORKSPACE_PANEL: Flow Engine */}
             <main className="workspace-container">
@@ -229,7 +229,6 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
                     }
                 `}</style>
             </main>
-        </div>
         </div>
     );
 };
