@@ -3,17 +3,17 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const API_KEY = process.env.GEMINI_API_KEY;
+const API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 
 let genAI: GoogleGenerativeAI | null = null;
 let model: any = null;
 
 if (API_KEY) {
     genAI = new GoogleGenerativeAI(API_KEY);
-    // FIX: gemini-pro was deprecated in Feb 2025. Using gemini-1.5-flash instead.
     model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    console.log('[GEMINI] ✓ SYSTEM_READY: Multimodal brain online.');
 } else {
-    console.warn('[WARN] GEMINI_API_KEY is not set. Study Chat features will be unavailable.');
+    console.error('[CRITICAL] GEMINI_API_KEY is not set. All AI features will be locked.');
 }
 
 export const geminiService = {
