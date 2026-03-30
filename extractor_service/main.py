@@ -57,11 +57,22 @@ async def extract_video(request: VideoRequest):
         api = YouTubeTranscriptApi()
         transcript_list = api.list(video_id)
         
-        # Priority: Manual English -> Auto English
+        # Priority: Manual English Dialects -> Auto English -> Any English variant
         try:
-            transcript = transcript_list.find_transcript(['en'])
+            # First try most common English codes
+            transcript = transcript_list.find_transcript(['en', 'en-IN', 'en-GB', 'en-US'])
         except:
-            transcript = transcript_list.find_generated_transcript(['en'])
+            try:
+                # If manual dialacts fail, try to catch ANY generated English
+                transcript = transcript_list.find_generated_transcript(['en', 'en-IN', 'en-GB', 'en-US'])
+            except:
+                # Absolute last resort: Just take the first thing that looks like English
+                available_langs = [t.language_code for t in transcript_list]
+                eng_variant = next((l for l in available_langs if l.startswith('en')), None)
+                if eng_variant:
+                    transcript = transcript_list.find_transcript([eng_variant])
+                else:
+                    raise Exception("No suitable English transcript found.")
             
         transcript_text = " ".join([t.text for t in transcript.fetch()])
         
