@@ -9,8 +9,8 @@ let embeddingModel: any = null;
 
 if (API_KEY) {
     genAI = new GoogleGenerativeAI(API_KEY);
-    // Using the state-of-the-art embedding model for highest speed/accuracy.
-    embeddingModel = genAI.getGenerativeModel({ model: 'text-embedding-004' });
+    // Using gemini-embedding-001 as verified available on high-speed v1beta endpoint.
+    embeddingModel = genAI.getGenerativeModel({ model: 'gemini-embedding-001' });
 }
 
 export const embeddingService = {
