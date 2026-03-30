@@ -24,8 +24,14 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    // SCROLL_LOCK_LOGIC: Use 'auto' instead of 'smooth' to prevent layout stutter during high-speed streaming.
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (messagesEndRef.current) {
+            const container = messagesEndRef.current.parentElement;
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
     }, [messages]);
 
     const handleSend = async (e?: React.FormEvent) => {
@@ -106,178 +112,124 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
         }
     };
 
-    return (
-        <div className={`bauhaus-chat-layout ${isExpanded ? 'expanded' : ''}`}>
-            {/* SOURCE PANEL (VISIBLE ONLY WHEN NOT EXPANDED) */}
+    retu        <div className={`layout-root ${isExpanded ? 'expanded' : ''}`}>
+            {/* 01_SOURCE_ENGINE: Vision & Metadata */}
             {!isExpanded && (
-                <aside className="bauhaus-pane source-panel bauhaus-border bauhaus-shadow">
-                    <div className="pane-headline">01_SOURCE</div>
+                <aside className="sidebar">
+                    <div className="industrial-label">01_SOURCE_FEED</div>
                     
-                    <div className="pane-content">
-                        <div className="thumb-container bauhaus-border">
-                            <img 
-                                src={`https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`} 
-                                alt="YOUTUBE_SOURCE" 
-                                style={{ width: '100%', display: 'block' }}
-                            />
-                            <div className="thumb-overlay">ID: {ytId}</div>
-                        </div>
-                        
-                        <div className="source-meta">
-                            <label className="metadata-label">METADATA_STREAM</label>
-                            <div className="metadata-box bauhaus-border">
-                                 <div className="meta-row"><span>ANALYSIS_v1.0.0</span></div>
-                                 <div className="meta-row"><span>RAG_STATUS: [OK]</span></div>
+                    <div className="glass-card" style={{ padding: '4px', overflow: 'hidden' }}>
+                        <img 
+                            src={`https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`} 
+                            alt="SOURCE" 
+                            style={{ width: '100%', borderRadius: '4px', display: 'block' }}
+                        />
+                    </div>
+                    
+                    <div className="glass-card" style={{ marginTop: 'var(--grid-gap)' }}>
+                        <div className="industrial-label" style={{ marginBottom: '8px' }}>METADATA_STREAM</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '2' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>MODEL_ID</span>
+                                <span style={{ color: 'var(--accent-cyan)' }}>G_2.5_CORE</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>RAG_STATUS</span>
+                                <span style={{ color: 'var(--accent-blue)' }}>ONLINE</span>
                             </div>
                         </div>
+                    </div>
 
-                        <div className="source-footer" style={{ marginTop: 'auto', textAlign: 'center' }}>
-                            <div className="tag-bauhaus bauhaus-border">SYSTEM_VERIFIED</div>
+                    <div style={{ marginTop: 'auto', padding: '12px' }}>
+                        <div className="industrial-label" style={{ background: 'rgba(255,255,255,0.03)', padding: '8px' }}>
+                            <span style={{ color: 'var(--accent-red)' }}>●</span> ENCRYPTED_SYNC
                         </div>
                     </div>
                 </aside>
             )}
+  )}
 
-            {/* CHAT PANEL (ADAPTIVE) */}
-            <main className="bauhaus-pane chat-panel bauhaus-border bauhaus-shadow">
-                <div className="pane-headline">
+            {/* 02_WORKSPACE_PANEL: Flow Engine */}
+            <main className="workspace-container">
+                <header className="workspace-header">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                        <span>{isExpanded ? 'FULL_WORKSPACE_MODE' : '02_WORKSPACE'}</span>
-                        <button className="expand-toggle-btn" onClick={() => setIsExpanded(!isExpanded)}>
-                            {isExpanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                        <div className="industrial-label" style={{ margin: 0 }}>
+                            {isExpanded ? 'CORE_WORKSPACE_EXPANDED' : '02_WORKSPACE_MODE'}
+                        </div>
+                        <button className="expand-toggle-btn" onClick={() => setIsExpanded(!isExpanded)} style={{ border: 'none', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', padding: '8px', color: 'white' }}>
+                            {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
                         </button>
                     </div>
-                </div>
+                </header>
 
-                <div className="chat-flow scroll-bauhaus">
-                    {/* FLOATING THUMBNAIL IN EXPANDED MODE */}
-                    {isExpanded && (
-                        <div className="floating-source-tag bauhaus-border bauhaus-shadow-sm">
-                            <img src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`} alt="SOURCE_THUMB" />
-                            <div className="tag-meta">SOURCE_ID: {ytId.substring(0, 4)}...</div>
-                        </div>
-                    )}
-
+                <div className="scroll-panel" style={{ padding: 'var(--grid-gap)', display: 'flex', flexDirection: 'column', gap: 'var(--grid-gap)' }}>
                     {messages.map((msg, i) => (
-                        <div key={i} className={`bauhaus-msg ${msg.sender} bauhaus-border`}>
-                            <div className={`msg-header ${msg.sender === 'user' ? 'bg-red' : 'bg-blue'}`}>
+                        <div key={i} className={`glass-card message-chunk ${msg.sender === 'user' ? 'user-align' : ''}`} style={{ 
+                            alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+                            maxWidth: '85%',
+                            borderLeft: `4px solid ${msg.sender === 'user' ? 'var(--accent-red)' : 'var(--accent-blue)'}`
+                        }}>
+                            <div className="industrial-label" style={{ color: msg.sender === 'user' ? 'var(--accent-red)' : 'var(--accent-blue)' }}>
                                 {msg.sender === 'user' ? 'USER_PROMPT' : 'SYSTEM_REPORT'}
                             </div>
-                            <div className="msg-body">
+                            <div style={{ color: 'var(--text-main)', fontSize: '15px' }}>
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
                                 {msg.sources && msg.sources.length > 0 && (
-                                    <div className="msg-citations">
+                                    <div style={{ 
+                                        marginTop: '16px', borderTop: '1px solid var(--border-light)', 
+                                        paddingTop: '8px', fontSize: '11px', color: 'var(--text-muted)' 
+                                    }}>
                                       {"// SOURCES: "}{msg.sources.join(', ')}
                                     </div>
                                 )}
                             </div>
                         </div>
                     ))}
-                    {isTyping && <div className="typing-indicator bauhaus-border">ANALYZING_TRANSCRIPTS...</div>}
+                    {isTyping && (
+                        <div className="industrial-label" style={{ alignSelf: 'center', background: 'rgba(255,255,255,0.05)', padding: '10px 20px', borderRadius: '20px' }}>
+                             <span className="pulse-dot">●</span> ANALYZING_NEURAL_STREAMS...
+                        </div>
+                    )}
                     <div ref={messagesEndRef} />
                 </div>
 
-                <form onSubmit={handleSend} className="chat-input-area bauhaus-border">
-                    <input 
-                        type="text" 
-                        className="chat-input-field" 
-                        placeholder="ASK_AI_ANYTHING..." 
-                        autoFocus
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                    />
-                    <button type="submit" className="btn-bauhaus btn-red chat-send-btn">SEND</button>
-                </form>
+                <div style={{ padding: 'var(--grid-gap)', borderTop: 'var(--glass-border)', background: 'var(--bg-header)' }}>
+                    <form onSubmit={handleSend} style={{ display: 'flex', gap: '12px', background: 'rgba(255,255,255,0.03)', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+                        <input 
+                            type="text" 
+                            style={{ 
+                                flex: 1, background: 'transparent', border: 'none', color: 'white', 
+                                padding: '12px', outline: 'none', fontStyle: 'italic'
+                            }} 
+                            placeholder="INITIALIZE_QUERY_SEQUENCE..." 
+                            autoFocus
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                        />
+                        <button type="submit" style={{ 
+                            background: 'var(--accent-red)', color: 'white', border: 'none', 
+                            padding: '0 24px', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer'
+                        }}>SEND</button>
+                    </form>
+                </div>
+
+                <style>{`
+                    .pulse-dot {
+                        color: var(--accent-cyan);
+                        animation: pulse 1.5s infinite;
+                        margin-right: 12px;
+                    }
+                    @keyframes pulse {
+                        0% { opacity: 0.2; }
+                        50% { opacity: 1; }
+                        100% { opacity: 0.2; }
+                    }
+                    .user-align {
+                        background: rgba(255, 62, 62, 0.05) !important;
+                    }
+                `}</style>
             </main>
-
-            <style>{`
-                .bauhaus-chat-layout {
-                    display: grid;
-                    grid-template-columns: 350px 1fr;
-                    gap: 3rem;
-                    height: 100%;
-                    transition: all 0.4s ease-out;
-                }
-
-                .bauhaus-chat-layout.expanded {
-                    grid-template-columns: 1fr;
-                    padding: 0 4rem;
-                }
-
-                .bauhaus-pane {
-                    display: flex;
-                    flex-direction: column;
-                    background: var(--pane-bg);
-                    height: 100%;
-                    position: relative;
-                    transition: all 0.4s ease;
-                }
-
-                .pane-headline {
-                    padding: 1rem 1.5rem;
-                    background: var(--border-color);
-                    color: var(--pane-bg);
-                    font-weight: 900;
-                    font-size: 1rem;
-                    letter-spacing: 0.1em;
-                    display: flex;
-                }
-
-                .expand-toggle-btn {
-                    background: none;
-                    border: 2px solid var(--pane-bg);
-                    color: var(--pane-bg);
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 4px;
-                    transition: all 0.2s;
-                }
-                .expand-toggle-btn:hover { background: var(--pane-bg); color: var(--border-color); }
-
-                .pane-content { padding: 2rem; flex-grow: 1; display: flex; flex-direction: column; }
-
-                /* FLOATING THUMB */
-                .floating-source-tag {
-                    position: sticky; top: 0; margin-bottom: 2rem; width: 140px;
-                    background: var(--pane-bg); z-index: 10; overflow: hidden;
-                }
-                .floating-source-tag img { width: 100%; display: block; filter: grayscale(100%); }
-                .tag-meta { background: var(--border-color); color: var(--pane-bg); font-size: 0.6rem; padding: 4px; font-weight: 900; }
-
-                /* CHAT */
-                .chat-flow { flex-grow: 1; padding: 2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 2rem; }
-                
-                .bauhaus-msg { background: var(--pane-bg); color: var(--foreground); max-width: 90%; align-self: flex-start; }
-                .bauhaus-msg.user { align-self: flex-end; border-color: var(--primary-red); }
-                .bauhaus-msg.ai { border-color: var(--primary-blue); }
-
-                .msg-header { padding: 0.3rem 1rem; color: white; font-weight: 900; font-size: 0.7rem; letter-spacing: 0.1em; }
-                .bg-red { background: var(--primary-red); }
-                .bg-blue { background: var(--primary-blue); }
-                
-                .msg-body { padding: 1.5rem; font-weight: 500; font-size: 1.1rem; }
-                .msg-citations { 
-                   margin-top: 1rem; border-top: 2px dashed var(--border-color); padding-top: 0.5rem;
-                   font-size: 0.7rem; color: var(--foreground); opacity: 0.6; font-weight: 900;
-                }
-
-                .tag-bauhaus { padding: 1rem; font-weight: 900; font-size: 0.8rem; background: rgba(128,128,128,0.1); }
-
-                .typing-indicator { padding: 1rem; background: rgba(128,128,128,0.1); font-weight: 900; width: fit-content; margin: 0 auto; }
-
-                /* INPUT AREA */
-                .chat-input-area { margin: 1rem 2rem 2rem; display: flex; background: var(--pane-bg); }
-                .chat-input-field { flex-grow: 1; border: none; padding: 1.5rem; font-weight: 900; font-family: inherit; outline: none; background: transparent; color: var(--foreground); }
-                .chat-send-btn { border-top: none; border-bottom: none; border-right: none; }
-
-                @media (max-width: 1000px) {
-                  .bauhaus-chat-layout { grid-template-columns: 1fr !important; }
-                  .source-panel { display: none; }
-                  .floating-source-tag { display: block; }
-                }
-            `}</style>
+        </div>
         </div>
     );
 };

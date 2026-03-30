@@ -57,84 +57,61 @@ const App: React.FC = () => {
   ];
 
   return (
-    <div className={`bauhaus-root ${isMobileMenuOpen ? 'menu-open' : ''} ${isDarkMode ? 'bauhaus-dark' : ''}`}>
-      {/* MOBILE TRIGGER */}
-      <button className="mobile-menu-trigger bauhaus-border" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-        {isMobileMenuOpen ? <X size={32}/> : <Menu size={32}/>}
-      </button>
+    <div className={`layout-root ${isMobileMenuOpen ? 'menu-open' : ''}`}>
+      {/* 00_CORE_NAVIGATION */}
+      <nav className="sidebar">
+          <div className="brand-logo-home" onClick={() => setView('hero')} style={{ display: 'flex', gap: '8px', marginBottom: '40px', cursor: 'pointer' }}>
+            <Circle fill="var(--accent-red)" color="transparent" size={12} />
+            <Square fill="var(--accent-blue)" color="transparent" size={12} />
+            <Triangle fill="var(--accent-yellow)" color="transparent" size={12} />
+            <div style={{ fontWeight: 900, fontSize: '16px', letterSpacing: '0.1em' }}>SCRIPTYT</div>
+          </div>
 
-      {/* ASYMMETRIC NAVIGATION PANEL */}
-      <nav className="bauhaus-nav bauhaus-border">
-         <div className="brand-logo-home" onClick={() => setView('hero')}>
-            <Circle className="logo-shape" fill="var(--primary-red)" color="transparent" size={30} />
-            <Square className="logo-shape" fill="var(--primary-blue)" color="transparent" size={30} />
-            <Triangle className="logo-shape" fill="var(--primary-yellow)" color="transparent" size={30} />
-            <div className="logo-text">SCRIPTYT</div>
-         </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                className={`nav-btn-new ${currentView === item.id ? 'active' : ''}`}
+                onClick={() => setView(item.id as View)}
+                style={{
+                    background: currentView === item.id ? 'rgba(255,255,255,0.05)' : 'transparent',
+                    border: 'none', padding: '12px 16px', borderRadius: '4px', textAlign: 'left',
+                    cursor: 'pointer', color: currentView === item.id ? 'white' : 'var(--text-muted)',
+                    transition: '0.2s', display: 'flex', flexDirection: 'column'
+                }}
+              >
+                <span style={{ fontSize: '9px', fontWeight: 900, opacity: 0.5 }}>{item.label.split('_')[0]}</span>
+                <span style={{ fontSize: '14px', fontWeight: 900 }}>{item.label.split('_')[1]}</span>
+              </button>
+            ))}
+          </div>
 
-         <div className="nav-links">
-           {navItems.map((item) => (
-             <button
-               key={item.id}
-               className={`nav-btn ${currentView === item.id ? 'active' : ''}`}
-               onClick={() => setView(item.id as View)}
-               style={{ '--accent-color': item.color } as any}
-             >
-               <span className="btn-index">{item.label.split('_')[0]}</span>
-               <span className="btn-label">{item.label.split('_')[1]}</span>
-             </button>
-           ))}
-         </div>
-
-         {/* THEME TOGGLE FOOTER */}
-         <div className="nav-footer">
-            <button className="theme-toggle bauhaus-border bauhaus-shadow-sm" onClick={toggleTheme}>
-                {isDarkMode ? <Sun size={18}/> : <Moon size={18}/>}
-                <span>MODE: {isDarkMode ? 'CONSTRUCT' : 'BLUEPRINT'}</span>
-            </button>
-            <div className="status-badge">v2.1_CORE_ACTIVE</div>
-         </div>
+          <div style={{ marginTop: 'auto', borderTop: 'var(--glass-border)', paddingTop: '20px' }}>
+             <div className="industrial-label" style={{ fontSize: '9px', opacity: 0.6 }}>SYSTEM_CORE_v2.1</div>
+             <div className="industrial-label" style={{ fontSize: '9px', color: 'var(--accent-cyan)' }}>D_ART_ACTIVE</div>
+          </div>
       </nav>
 
-      {/* MAIN CONTENT CANVAS */}
-      <main className="bauhaus-viewport">
-        {currentView === 'hero' && (
-           <HeroLanding onOpenAnalyzer={() => setView('landing')} />
-        )}
-
-        {currentView === 'landing' && (
-          <LandingPage onUrlSubmit={handleUrlSubmit} onNavigate={(v: any) => setView(v)} />
-        )}
-
-        {currentView === 'playground' && (
-          <div className="viewport-container">
-               <SearchPlayground onResultClick={handleResultClick} />
-          </div>
-        )}
-
+      {/* 01_APPLICATION_VIEWPORT */}
+      <main className="workspace-container" style={{ background: 'var(--bg-core)' }}>
+        {currentView === 'hero' && <HeroLanding onOpenAnalyzer={() => setView('landing')} />}
+        {currentView === 'landing' && <LandingPage onUrlSubmit={handleUrlSubmit} onNavigate={(v: any) => setView(v)} />}
+        {currentView === 'playground' && <SearchPlayground onResultClick={handleResultClick} />}
         {currentView === 'chat' && (
-          <div className="viewport-container">
+          <div style={{ height: '100%', width: '100%' }}>
             {videoUrl ? (
-              <Chat
-                videoUrl={videoUrl}
-                videoId={docId || ''}
-                ytId={ytId || ''}
-              />
+              <Chat videoUrl={videoUrl} videoId={docId || ''} ytId={ytId || ''} />
             ) : (
-                <div className="empty-bauhaus bauhaus-border">
-                    <h2 className="heading-lg">NO_SOURCE_FOUND</h2>
-                    <p>SYSTEM_RECEPTORS_IDLE. PLEASE FEED A SOURCE OR DISCOVER VIA EXPLORE.</p>
-                    <div className="composition-buttons" style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '2rem' }}>
-                        <button className="btn-bauhaus btn-red" onClick={() => setView('landing')}>GOTO_START</button>
-                        <button className="btn-bauhaus btn-yellow" onClick={() => setView('playground')}>GOTO_EXPLORE</button>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '20px' }}>
+                    <div className="industrial-label">NO_OPERATIONAL_SOURCE</div>
+                    <div className="glass-card" style={{ textAlign: 'center', maxWidth: '400px' }}>
+                        <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>Feed a YouTube DNA sequence into the analyzer to begin the Multimodal extraction.</p>
+                        <button className="nav-btn-new" onClick={() => setView('landing')} style={{ background: 'var(--accent-blue)', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>INITIALIZE_START</button>
                     </div>
                 </div>
             )}
           </div>
         )}
-
-        {currentView === 'dataflow' && <Dataflow onBack={() => setView('landing')} />}
-        {currentView === 'contact' && <ContactPage onBack={() => setView('landing')} />}
       </main>
 
       <style>{`

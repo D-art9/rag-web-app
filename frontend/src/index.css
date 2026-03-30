@@ -23,36 +23,172 @@
   --border-color: #F0F0F0;
   --shadow-color: rgba(255,0,0,0.3);
 }
-
 @font-face {
   font-family: 'Outfit';
   src: url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
 }
 
-body {
-  margin: 0;
-  font-family: 'Outfit', sans-serif;
-  background-color: var(--bg-color);
-  color: var(--foreground);
-  -webkit-font-smoothing: antialiased;
-  transition: background-color 0.4s ease, color 0.4s ease;
+:root {
+  /* Geometric Base */
+  --space-unit: 8px;
+  --grid-gap: 24px;
+  
+  /* Deep Space Palette */
+  --bg-core: #0a0a0c;
+  --bg-surface: rgba(22, 22, 26, 0.7);
+  --bg-header: rgba(10, 10, 12, 0.9);
+  
+  /* Accent Tokens */
+  --accent-red: #ff3e3e;
+  --accent-blue: #3e8bff;
+  --accent-yellow: #ffc107;
+  --accent-cyan: #00f2ff;
+  
+  /* Text & Borders */
+  --text-main: #f0f0f5;
+  --text-muted: #8e8e9c;
+  --border-light: rgba(255, 255, 255, 0.08);
+  --border-active: rgba(255, 255, 255, 0.2);
+  
+  /* Glassmorphism Specs */
+  --glass-blur: 16px;
+  --glass-border: 1px solid rgba(255, 255, 255, 0.05);
+
+  /* Performance */
+  --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* GLOBAL BAUHAUS UTILITIES */
-.bauhaus-border { border: 4px solid var(--border-color); }
-.bauhaus-shadow { box-shadow: 12px 12px 0px 0px var(--shadow-color); }
-.bauhaus-shadow-sm { box-shadow: 6px 6px 0px 0px var(--shadow-color); }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
 
-.heading-lg { font-weight: 900; font-size: 4rem; letter-spacing: -0.05em; text-transform: uppercase; line-height: 0.9; }
-.heading-sm { font-weight: 900; font-size: 1.5rem; text-transform: uppercase; }
+body {
+  background-color: var(--bg-core);
+  color: var(--text-main);
+  font-family: 'Inter', -apple-system, sans-serif;
+  overflow: hidden; /* We'll use custom scroll containers to prevent page-level stutter */
+}
 
-.btn-red { background: var(--primary-red); color: white; }
-.btn-blue { background: var(--primary-blue); color: white; }
-.btn-yellow { background: var(--primary-yellow); color: black; }
+/* Scrollbar Engineering */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { 
+  background: var(--border-light); 
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
 
-.scroll-bauhaus::-webkit-scrollbar { width: 12px; }
-.scroll-bauhaus::-webkit-scrollbar-track { background: var(--bg-color); border-left: 4px solid var(--border-color); }
-.scroll-bauhaus::-webkit-scrollbar-thumb { background: var(--border-color); border: 2px solid var(--bg-color); }
+/* --- Industrial Layout Engine --- */
+
+.layout-root {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-image: 
+    radial-gradient(circle at 0% 0%, rgba(62, 139, 255, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(255, 62, 62, 0.03) 0%, transparent 50%);
+}
+
+.sidebar {
+  width: 280px;
+  height: 100%;
+  border-right: var(--glass-border);
+  background: var(--bg-header);
+  display: flex;
+  flex-direction: column;
+  padding: var(--grid-gap);
+  z-index: 100;
+}
+
+.workspace-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: rgba(0,0,0,0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.workspace-header {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--grid-gap);
+  border-bottom: var(--glass-border);
+  backdrop-filter: blur(var(--glass-blur));
+  background: var(--bg-header);
+  z-index: 10;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: var(--grid-gap);
+  padding: var(--grid-gap);
+  flex: 1;
+  overflow: hidden; /* Crucial for stutter fix */
+}
+
+/* Stutter-Proof Scroll Container */
+.scroll-panel {
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 8px;
+  will-change: transform; /* Hint to GPU */
+  scroll-behavior: smooth;
+}
+
+/* --- Component Refinement --- */
+
+.glass-card {
+  background: var(--bg-surface);
+  backdrop-filter: blur(var(--glass-blur));
+  border: var(--glass-border);
+  border-radius: 8px;
+  padding: 20px;
+  transition: var(--transition-smooth);
+}
+
+.glass-card:hover {
+  border-color: var(--border-active);
+  background: rgba(30, 30, 36, 0.8);
+}
+
+.industrial-label {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.industrial-label::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: var(--accent-red);
+}
+
+/* Stream Animation (Flowy) */
+@keyframes fadeInSlideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.message-chunk {
+  animation: fadeInSlideUp 0.3s ease forwards;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
 
 .bauhaus-bg-grid {
     position: absolute; top: 0; left: 0; right: 0; bottom: 0;
