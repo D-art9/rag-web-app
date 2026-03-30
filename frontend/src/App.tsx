@@ -4,7 +4,7 @@ import Chat from './components/Chat';
 import Dataflow from './components/Dataflow';
 import HeroLanding from './components/HeroLanding';
 import HistoryPage from './components/HistoryPage';
-import { Circle, Square, Triangle } from 'lucide-react';
+import { Circle, Square, Triangle, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import './index.css';
 
 type View = 'hero' | 'landing' | 'chat' | 'history' | 'dataflow';
@@ -15,6 +15,7 @@ const App: React.FC = () => {
   const [ytId, setYtId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<View>('hero');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const setView = (v: View) => {
     setCurrentView(v);
@@ -44,7 +45,7 @@ const App: React.FC = () => {
   return (
     <div className={`layout-root ${isMobileMenuOpen ? 'menu-open' : ''}`}>
       {/* 00_CORE_NAVIGATION */}
-      <nav className="sidebar">
+      <nav className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
           <div className="brand-logo-home" onClick={() => setView('hero')} style={{ display: 'flex', gap: '8px', marginBottom: '40px', cursor: 'pointer' }}>
             <Circle fill="var(--accent-red)" color="transparent" size={12} />
             <Square fill="var(--accent-blue)" color="transparent" size={12} />
@@ -58,6 +59,7 @@ const App: React.FC = () => {
                 key={item.id}
                 className={`nav-btn-new ${currentView === item.id ? 'active' : ''}`}
                 onClick={() => setView(item.id as View)}
+                title={isSidebarCollapsed ? item.label.split('_')[1] : ''}
                 style={{
                     background: currentView === item.id ? 'rgba(255,255,255,0.05)' : 'transparent',
                     border: 'none', padding: '12px 16px', borderRadius: '4px', textAlign: 'left',
@@ -65,15 +67,29 @@ const App: React.FC = () => {
                     transition: '0.2s', display: 'flex', flexDirection: 'column'
                 }}
               >
-                <span style={{ fontSize: '9px', fontWeight: 900, opacity: 0.5 }}>{item.label.split('_')[0]}</span>
+                {!isSidebarCollapsed && <span style={{ fontSize: '9px', fontWeight: 900, opacity: 0.5 }}>{item.label.split('_')[0]}</span>}
                 <span style={{ fontSize: '14px', fontWeight: 900 }}>{item.label.split('_')[1]}</span>
               </button>
             ))}
           </div>
 
           <div style={{ marginTop: 'auto', borderTop: 'var(--glass-border)', paddingTop: '20px' }}>
-             <div className="industrial-label" style={{ fontSize: '9px', opacity: 0.6 }}>SYSTEM_CORE_v2.1</div>
-             <div className="industrial-label" style={{ fontSize: '9px', color: 'var(--accent-cyan)' }}>D_ART_ACTIVE</div>
+             {!isSidebarCollapsed && (
+                 <>
+                    <div className="industrial-label" style={{ fontSize: '9px', opacity: 0.6 }}>SYSTEM_CORE_v2.1</div>
+                    <div className="industrial-label" style={{ fontSize: '9px', color: 'var(--accent-cyan)' }}>D_ART_ACTIVE</div>
+                 </>
+             )}
+             <button 
+                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                style={{
+                    width: '100%', background: 'rgba(255,255,255,0.03)', border: 'none',
+                    padding: '12px', cursor: 'pointer', color: 'var(--text-muted)',
+                    borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}
+             >
+                {isSidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+             </button>
           </div>
       </nav>
 

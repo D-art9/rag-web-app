@@ -162,12 +162,13 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
                     </div>
                 </header>
 
-                <div className="scroll-panel" style={{ padding: 'var(--grid-gap)', display: 'flex', flexDirection: 'column', gap: 'var(--grid-gap)' }}>
+                <div className="scroll-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'flex-start' }}>
                     {messages.map((msg, i) => (
                         <div key={i} className={`glass-card message-chunk ${msg.sender === 'user' ? 'user-align' : ''}`} style={{ 
-                            alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                            maxWidth: '85%',
-                            borderLeft: `4px solid ${msg.sender === 'user' ? 'var(--accent-red)' : 'var(--accent-blue)'}`
+                            alignSelf: 'stretch',
+                            maxWidth: '900px',
+                            borderLeft: `4px solid ${msg.sender === 'user' ? 'var(--accent-red)' : 'var(--accent-blue)'}`,
+                            margin: msg.sender === 'user' ? '0 0 0 auto' : '0 auto 0 0'
                         }}>
                             <div className="industrial-label" style={{ color: msg.sender === 'user' ? 'var(--accent-red)' : 'var(--accent-blue)' }}>
                                 {msg.sender === 'user' ? 'USER_PROMPT' : 'SYSTEM_REPORT'}
