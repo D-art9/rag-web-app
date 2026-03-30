@@ -55,7 +55,7 @@ async def extract_video(request: VideoRequest):
         logger.info(f"[TIER_01] Attempting Specialized CC API for: {video_id}")
         # FIX: Instantiate the API class to resolve "no attribute 'get_transcript'" error
         api = YouTubeTranscriptApi()
-        transcript_list = api.list_transcripts(video_id)
+        transcript_list = api.list(video_id)
         
         # Priority: Manual English -> Auto English
         try:
