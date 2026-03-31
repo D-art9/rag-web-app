@@ -136,13 +136,18 @@ const LoadingScreen: React.FC<{ message?: string }> = ({ message = "SYSTEM_INGES
                 }
 
                 .view-container {
-                    height: 100vh; display: flex; flex-direction: column; padding: 2rem 4rem;
+                    height: 100vh; display: grid;
+                    grid-template-rows: auto 1fr auto;
+                    grid-template-columns: 1fr 220px;
+                    padding: 2rem 4rem;
+                    gap: 0 3rem;
                 }
 
                 /* HEADER */
                 .system-hdr {
                     display: flex; justify-content: space-between; align-items: center;
                     padding-bottom: 2rem; margin-bottom: 2rem;
+                    grid-column: 1 / -1;
                 }
                 .hdr-title-group { text-align: center; flex-grow: 1; }
                 .hdr-title { font-weight: 900; font-size: 1.2rem; letter-spacing: 0.2em; color: var(--primary-red); margin-bottom: 0.5rem; }
@@ -156,7 +161,8 @@ const LoadingScreen: React.FC<{ message?: string }> = ({ message = "SYSTEM_INGES
 
                 /* FIELD */
                 .visualizer-field {
-                    flex-grow: 1; display: flex; flex-direction: column; align-items: center; position: relative;
+                    grid-column: 1; grid-row: 2;
+                    display: flex; flex-direction: column; align-items: center; position: relative;
                 }
 
                 .ingestion-node {
@@ -168,7 +174,7 @@ const LoadingScreen: React.FC<{ message?: string }> = ({ message = "SYSTEM_INGES
                 .node-status { font-weight: 900; font-size: 0.7rem; color: var(--primary-blue); }
 
                 /* FLOW */
-                .flow-complex { display: flex; gap: 15rem; width: 100%; justify-content: center; }
+                .flow-complex { display: flex; gap: clamp(4rem, 12vw, 15rem); width: 100%; justify-content: center; }
                 .channel { position: relative; width: 6px; height: 250px; background: #ddd; }
                 
                 .beam { position: absolute; top: 0; left: -2px; width: 10px; height: 60px; filter: blur(2px); }
@@ -208,7 +214,8 @@ const LoadingScreen: React.FC<{ message?: string }> = ({ message = "SYSTEM_INGES
 
                 /* SIDE STACK */
                 .infra-stack-view {
-                    position: fixed; right: 4rem; top: 50%; transform: translateY(-50%); width: 220px;
+                    grid-column: 2; grid-row: 2;
+                    align-self: start; padding-top: 1rem;
                 }
                 .stack-row { display: flex; gap: 1rem; border-bottom: 2px solid rgba(0,0,0,0.05); padding: 1rem 0; }
                 .row-num { font-weight: 900; color: #999; font-size: 0.7rem; }
@@ -216,6 +223,7 @@ const LoadingScreen: React.FC<{ message?: string }> = ({ message = "SYSTEM_INGES
 
                 /* LOGS */
                 .footer-logs {
+                    grid-column: 1 / -1;
                     display: flex; height: 80px; align-items: center; padding: 0 2rem; background: white;
                 }
                 .log-prefix { height: 100%; display: flex; align-items: center; padding: 0 2rem; color: white; font-weight: 900; font-size: 0.7rem; }

@@ -17,27 +17,24 @@ interface Message {
 
 const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
     const [messages, setMessages] = useState<Message[]>([
-        { text: "### 🔍 ANALYZE_COMPLETED\nSYSTEM_READY_FOR_QUERY", sender: 'ai' }
+        { text: "System online. Ready to answer questions about this video.", sender: 'ai' }
     ]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // SCROLL_LOCK_LOGIC: Use 'auto' instead of 'smooth' to prevent layout stutter during high-speed streaming.
     useEffect(() => {
         if (messagesEndRef.current) {
             const container = messagesEndRef.current.parentElement;
-            if (container) {
-                container.scrollTop = container.scrollHeight;
-            }
+            if (container) container.scrollTop = container.scrollHeight;
         }
     }, [messages]);
 
     const handleSend = async (e?: React.FormEvent) => {
         e?.preventDefault();
         if (!input.trim() || isTyping) return;
-        
+
         const userMsg = input;
         setInput('');
         setMessages(p => [...p, { text: userMsg, sender: 'user' }]);
@@ -72,28 +69,23 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
                         const dataStr = line.replace('data: ', '');
                         try {
                             const data = JSON.parse(dataStr);
-                            
-                            // To fix no-loop-func, we update the local accumulated text 
-                            // and then use a functional state update that only touches state
                             if (data.text) {
                                 accumulatedText += data.text;
-                                const freshText = accumulatedText; // Safe reference
+                                const freshText = accumulatedText;
                                 setMessages(prev => {
                                     const next = [...prev];
                                     next[next.length - 1] = { ...next[next.length - 1], text: freshText };
                                     return next;
                                 });
                             }
-
                             if (data.done) {
-                                const finalSources = data.sources; // Safe reference
+                                const finalSources = data.sources;
                                 setMessages(prev => {
                                     const next = [...prev];
                                     next[next.length - 1] = { ...next[next.length - 1], sources: finalSources };
                                     return next;
                                 });
                             }
-
                             if (data.error) throw new Error(data.error);
                         } catch (e) {
                             console.warn('[STREAM_JSON_PARTIAL]', e);
@@ -104,7 +96,7 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
         } catch (err: any) {
             setMessages(p => {
                 const next = [...p];
-                next[next.length - 1] = { ...next[next.length - 1], text: `### ✗ ERROR\n[ERR_RAG_PIPELINE]: ${err.message}` };
+                next[next.length - 1] = { ...next[next.length - 1], text: `**Error:** ${err.message}` };
                 return next;
             });
         } finally {
@@ -114,18 +106,19 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
 
     return (
         <div className={`chat-layout ${isExpanded ? 'expanded' : ''}`}>
-            {/* 01_SOURCE_ENGINE: Vision & Metadata */}
+
+            {/* SOURCE FEED SIDEBAR */}
             {!isExpanded && (
                 <aside className="video-info-aside">
                     <div className="industrial-label">01_SOURCE_FEED</div>
-                    
+
                     <div className="thumbnail-box">
-                        <img 
-                            src={`https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`} 
-                            alt="SOURCE" 
+                        <img
+                            src={`https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`}
+                            alt="SOURCE"
                         />
                     </div>
-                    
+
                     <div className="glass-card" style={{ marginTop: '24px', padding: '16px' }}>
                         <div className="industrial-label" style={{ marginBottom: '8px' }}>METADATA_STREAM</div>
                         <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '2' }}>
@@ -148,85 +141,146 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
                 </aside>
             )}
 
-            {/* 02_WORKSPACE_PANEL: Flow Engine */}
+            {/* MAIN WORKSPACE */}
             <main className="workspace-container">
                 <header className="workspace-header">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                        <div className="industrial-label" style={{ margin: 0 }}>
-                            {isExpanded ? 'CORE_WORKSPACE_EXPANDED' : '02_WORKSPACE_MODE'}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-cyan)', display: 'inline-block', boxShadow: '0 0 8px var(--accent-cyan)' }} />
+                            <span style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.15em', color: 'var(--text-muted)' }}>
+                                {isExpanded ? 'CORE_WORKSPACE_EXPANDED' : 'NEURAL_QUERY_ENGINE'}
+                            </span>
                         </div>
-                        <button className="expand-toggle-btn" onClick={() => setIsExpanded(!isExpanded)} style={{ border: 'none', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', padding: '8px', color: 'white' }}>
+                        <button
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            style={{ border: 'none', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', padding: '8px', color: 'white', cursor: 'pointer' }}
+                        >
                             {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
                         </button>
                     </div>
                 </header>
 
-                <div className="scroll-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'flex-start' }}>
+                {/* MESSAGE STREAM */}
+                <div className="scroll-panel" style={{ padding: '32px 40px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {messages.map((msg, i) => (
-                        <div key={i} className={`glass-card message-chunk ${msg.sender === 'user' ? 'user-align' : ''}`} style={{ 
-                            alignSelf: 'stretch',
-                            maxWidth: '900px',
-                            borderLeft: `4px solid ${msg.sender === 'user' ? 'var(--accent-red)' : 'var(--accent-blue)'}`,
-                            margin: msg.sender === 'user' ? '0 0 0 auto' : '0 auto 0 0'
-                        }}>
-                            <div className="industrial-label" style={{ color: msg.sender === 'user' ? 'var(--accent-red)' : 'var(--accent-blue)' }}>
-                                {msg.sender === 'user' ? 'USER_PROMPT' : 'SYSTEM_REPORT'}
+                        msg.sender === 'user' ? (
+                            <div key={i} style={{ alignSelf: 'flex-end', maxWidth: '70%', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                                <span style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '0.15em', color: 'var(--accent-red)', opacity: 0.7 }}>YOU</span>
+                                <div style={{
+                                    background: 'rgba(255,62,62,0.08)',
+                                    border: '1px solid rgba(255,62,62,0.25)',
+                                    borderRadius: '16px 16px 4px 16px',
+                                    padding: '14px 20px',
+                                    color: 'var(--text-main)',
+                                    fontSize: '15px',
+                                    lineHeight: '1.6'
+                                }}>
+                                    {msg.text}
+                                </div>
                             </div>
-                            <div style={{ color: 'var(--text-main)', fontSize: '15px' }}>
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
-                                {msg.sources && msg.sources.length > 0 && (
-                                    <div style={{ 
-                                        marginTop: '16px', borderTop: '1px solid var(--border-light)', 
-                                        paddingTop: '8px', fontSize: '11px', color: 'var(--text-muted)' 
-                                    }}>
-                                      {"// SOURCES: "}{msg.sources.join(', ')}
+                        ) : (
+                            <div key={i} className="ai-message-card" style={{ alignSelf: 'flex-start', maxWidth: '85%', width: '100%' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-blue)', boxShadow: '0 0 8px var(--accent-blue)' }} />
+                                    <span style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '0.2em', color: 'var(--accent-blue)' }}>SCRIPTYT · AI RESPONSE</span>
+                                    <div style={{ flex: 1, height: '1px', background: 'var(--border-light)' }} />
+                                    <span style={{ fontSize: '9px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>MSG_{String(i).padStart(3, '0')}</span>
+                                </div>
+                                <div className="glass-card ai-content" style={{ borderLeft: '3px solid var(--accent-blue)', padding: '20px 24px' }}>
+                                    <div className="markdown-body" style={{ color: 'var(--text-main)', fontSize: '15px', lineHeight: '1.75' }}>
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
                                     </div>
-                                )}
+                                    {msg.sources && msg.sources.length > 0 && (
+                                        <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-light)', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                            <span style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '0.15em', color: 'var(--text-muted)' }}>SOURCES</span>
+                                            {msg.sources.map((src: string, si: number) => (
+                                                <span key={si} style={{
+                                                    background: 'rgba(0,242,255,0.07)',
+                                                    border: '1px solid rgba(0,242,255,0.2)',
+                                                    borderRadius: '4px', padding: '3px 10px',
+                                                    fontSize: '11px', color: 'var(--accent-cyan)',
+                                                    fontFamily: 'monospace'
+                                                }}>{src}</span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </div>
+                        )
                     ))}
+
                     {isTyping && (
-                        <div className="industrial-label" style={{ alignSelf: 'center', background: 'rgba(255,255,255,0.05)', padding: '10px 20px', borderRadius: '20px' }}>
-                             <span className="pulse-dot">●</span> ANALYZING_NEURAL_STREAMS...
+                        <div style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div className="neural-pulse">
+                                <span /><span /><span /><span /><span />
+                            </div>
+                            <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 900, letterSpacing: '0.15em' }}>GENERATING RESPONSE...</span>
                         </div>
                     )}
                     <div ref={messagesEndRef} />
                 </div>
 
-                <div style={{ padding: 'var(--grid-gap)', borderTop: 'var(--glass-border)', background: 'var(--bg-header)' }}>
-                    <form onSubmit={handleSend} style={{ display: 'flex', gap: '12px', background: 'rgba(255,255,255,0.03)', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
-                        <input 
-                            type="text" 
-                            style={{ 
-                                flex: 1, background: 'transparent', border: 'none', color: 'white', 
-                                padding: '12px', outline: 'none', fontStyle: 'italic'
-                            }} 
-                            placeholder="INITIALIZE_QUERY_SEQUENCE..." 
+                {/* INPUT BAR */}
+                <div style={{ padding: '20px 40px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.3)' }}>
+                    <form onSubmit={handleSend} style={{ display: 'flex', gap: '12px', background: 'rgba(255,255,255,0.03)', padding: '10px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', alignItems: 'center' }}>
+                        <span style={{ fontSize: '14px', color: 'var(--accent-red)', fontWeight: 900, flexShrink: 0 }}>›</span>
+                        <input
+                            type="text"
+                            style={{ flex: 1, background: 'transparent', border: 'none', color: 'white', padding: '10px 4px', outline: 'none', fontSize: '15px' }}
+                            placeholder="Ask anything about this video..."
                             autoFocus
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                         />
-                        <button type="submit" style={{ 
-                            background: 'var(--accent-red)', color: 'white', border: 'none', 
-                            padding: '0 24px', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer'
+                        <span style={{ fontSize: '9px', color: 'var(--text-muted)', flexShrink: 0 }}>⏎ SEND</span>
+                        <button type="submit" style={{
+                            background: 'var(--accent-red)', color: 'white', border: 'none',
+                            padding: '10px 20px', borderRadius: '8px', fontWeight: 900, cursor: 'pointer',
+                            fontSize: '12px', letterSpacing: '0.1em'
                         }}>SEND</button>
                     </form>
                 </div>
 
                 <style>{`
-                    .pulse-dot {
-                        color: var(--accent-cyan);
-                        animation: pulse 1.5s infinite;
-                        margin-right: 12px;
+                    .neural-pulse { display: flex; gap: 4px; align-items: flex-end; height: 24px; }
+                    .neural-pulse span {
+                        width: 4px; background: var(--accent-cyan); border-radius: 2px;
+                        animation: neural-bar 1.2s ease-in-out infinite; opacity: 0.7;
                     }
-                    @keyframes pulse {
-                        0% { opacity: 0.2; }
-                        50% { opacity: 1; }
-                        100% { opacity: 0.2; }
+                    .neural-pulse span:nth-child(1) { height: 8px; animation-delay: 0s; }
+                    .neural-pulse span:nth-child(2) { height: 16px; animation-delay: 0.15s; }
+                    .neural-pulse span:nth-child(3) { height: 24px; animation-delay: 0.3s; }
+                    .neural-pulse span:nth-child(4) { height: 16px; animation-delay: 0.45s; }
+                    .neural-pulse span:nth-child(5) { height: 8px; animation-delay: 0.6s; }
+                    @keyframes neural-bar {
+                        0%, 100% { opacity: 0.3; transform: scaleY(0.5); }
+                        50% { opacity: 1; transform: scaleY(1); }
                     }
-                    .user-align {
-                        background: rgba(255, 62, 62, 0.05) !important;
+                    .markdown-body h1,.markdown-body h2,.markdown-body h3 { color: white; font-weight: 900; margin: 16px 0 8px; }
+                    .markdown-body h1 { font-size: 1.4em; }
+                    .markdown-body h2 { font-size: 1.2em; color: var(--accent-cyan); }
+                    .markdown-body h3 { font-size: 1em; color: var(--accent-blue); }
+                    .markdown-body p { margin: 8px 0; }
+                    .markdown-body ul, .markdown-body ol { padding-left: 20px; margin: 8px 0; }
+                    .markdown-body li { margin: 6px 0; padding-left: 8px; list-style: disc; }
+                    .markdown-body code {
+                        background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);
+                        border-radius: 4px; padding: 2px 6px; font-size: 13px; color: var(--accent-cyan);
+                        font-family: 'JetBrains Mono', monospace;
                     }
+                    .markdown-body pre {
+                        background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.08);
+                        border-radius: 8px; padding: 16px; overflow-x: auto; margin: 12px 0;
+                    }
+                    .markdown-body pre code { background: none; border: none; padding: 0; color: #e0e0e0; }
+                    .markdown-body strong { color: white; font-weight: 900; }
+                    .markdown-body blockquote {
+                        border-left: 3px solid var(--accent-yellow); padding-left: 16px;
+                        color: var(--text-muted); margin: 12px 0; font-style: italic;
+                    }
+                    .ai-message-card { animation: msg-slide-in 0.3s ease-out forwards; }
+                    @keyframes msg-slide-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+                    .ai-content:hover { border-color: rgba(62,139,255,0.5) !important; }
                 `}</style>
             </main>
         </div>
