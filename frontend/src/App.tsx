@@ -4,10 +4,11 @@ import Chat from './components/Chat';
 import Dataflow from './components/Dataflow';
 import HeroLanding from './components/HeroLanding';
 import HistoryPage from './components/HistoryPage';
+import Diagnostics from './components/Diagnostics';
 import { Circle, Square, Triangle, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import './index.css';
 
-type View = 'hero' | 'landing' | 'chat' | 'history' | 'dataflow';
+type View = 'hero' | 'landing' | 'chat' | 'history' | 'dataflow' | 'diagnostics';
 
 const App: React.FC = () => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -40,6 +41,7 @@ const App: React.FC = () => {
     { id: 'chat', label: '02_WORKSPACE', color: 'var(--accent-blue)' },
     { id: 'history', label: '03_HISTORY', color: 'var(--accent-yellow)' },
     { id: 'dataflow', label: '04_DATAFLOW', color: 'var(--accent-cyan)' },
+    { id: 'diagnostics', label: '05_DIAGNOSTICS', color: 'var(--primary-yellow)' },
   ];
 
   return (
@@ -96,10 +98,11 @@ const App: React.FC = () => {
       {/* 01_APPLICATION_VIEWPORT */}
       <main className="workspace-container" style={{ background: 'var(--bg-core)' }}>
         {currentView === 'hero' && <HeroLanding onOpenAnalyzer={() => setView('landing')} />}
-        {currentView === 'landing' && <LandingPage onUrlSubmit={handleUrlSubmit} onNavigate={(v: any) => setView(v)} />}
-        {currentView === 'history' && <HistoryPage onSelectVideo={(id, url) => { setDocId(id); setVideoUrl(url); setView('chat'); }} />}
-        {currentView === 'dataflow' && <Dataflow />}
-        {currentView === 'chat' && (
+        { currentView === 'landing' && <LandingPage onUrlSubmit={handleUrlSubmit} onNavigate={(v: any) => setView(v)} /> }
+        { currentView === 'history' && <HistoryPage onSelectVideo={(id, url) => { setDocId(id); setVideoUrl(url); setView('chat'); }} /> }
+        { currentView === 'dataflow' && <Dataflow /> }
+        { currentView === 'diagnostics' && <Diagnostics /> }
+        { currentView === 'chat' && (
           <div style={{ height: '100%', width: '100%' }}>
             {videoUrl ? (
               <Chat videoUrl={videoUrl} videoId={docId || ''} ytId={ytId || ''} />
