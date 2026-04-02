@@ -37,8 +37,9 @@ export const transcriptService = {
      * 2. Fallback to a secondary service if primary is truly down or rate-limited.
      */
     extractAll: async (videoUrl: string): Promise<{ transcript: string; title: string; thumbnail: string }> => {
-        // SYSTEM_FORCE_SYNC: Bypassing broken primary tunnel subdomain for stable V2 bridge
-        const primaryUrl = 'https://scriptyt-node-v2.loca.lt';
+        // Prefer the actual environment variable (like http://localhost:8000 for local runs)
+        // Fallback to the V4 tunnel for Render deployed environments.
+        const primaryUrl = process.env.EXTRACTOR_SERVICE_URL || 'https://scriptyt-node-v4.loca.lt';
         const fallbackUrl = process.env.EXTRACTOR_FALLBACK_URL;
 
         console.log(`[INGEST] Attempting extraction (PRIMARY) via: ${primaryUrl} for: ${videoUrl}`);

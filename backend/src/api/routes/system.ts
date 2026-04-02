@@ -4,7 +4,7 @@ import axios from 'axios';
 const router = Router();
 
 router.get('/tunnel-status', async (req, res) => {
-    const tunnelUrl = process.env.EXTRACTOR_SERVICE_URL || 'https://scriptyt-node-v2.loca.lt';
+    const tunnelUrl = process.env.EXTRACTOR_SERVICE_URL || 'https://scriptyt-node-v4.loca.lt';
     
     try {
         // Attempt to hit the root of the tunnel (or a health endpoint if it exists)
