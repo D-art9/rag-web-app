@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, Circle, Square, Triangle, Activity, Zap, Cpu, X } from 'lucide-react';
 
 interface HeroLandingProps {
@@ -9,6 +9,39 @@ type Panel = 'features' | 'tech' | 'api' | null;
 
 const HeroLanding: React.FC<HeroLandingProps> = ({ onOpenAnalyzer }) => {
     const [activePanel, setActivePanel] = useState<Panel>(null);
+    const [tunnelStatus, setTunnelStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+    const [isRestarting, setIsRestarting] = useState(false);
+
+    useEffect(() => {
+        checkTunnelStatus();
+    }, []);
+
+    const checkTunnelStatus = async () => {
+        setTunnelStatus('checking');
+        try {
+            const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://scriptyt-test-laptop.loca.lt/api';
+            const req = await fetch(`${API_BASE_URL}/system/tunnel-status`);
+            const res = await req.json();
+            setTunnelStatus(res.status === 'online' ? 'online' : 'offline');
+        } catch {
+            setTunnelStatus('offline');
+        }
+    };
+
+    const restartTunnel = async () => {
+        setIsRestarting(true);
+        try {
+            // Attempt to hit the local watchdog script gracefully
+            await fetch('http://localhost:4999/restart-tunnel', { method: 'POST' });
+        } catch (e) {
+            console.error("Watchdog check failed. Could not auto-restart.");
+        }
+        
+        // Wait 5 seconds and check again
+        setTimeout(() => {
+            checkTunnelStatus().finally(() => setIsRestarting(false));
+        }, 5000);
+    };
 
     const togglePanel = (panel: Panel) => {
         setActivePanel(prev => prev === panel ? null : panel);
@@ -118,6 +151,23 @@ const HeroLanding: React.FC<HeroLandingProps> = ({ onOpenAnalyzer }) => {
                         <div className="status-indicator">
                             <div className="pulse-circle"></div>
                             <span>CONNECTED: GEMINI_2.5</span>
+                        </div>
+                        <div className="status-indicator" style={{ marginLeft: '1rem', borderLeft: '2px solid rgba(0,0,0,0.1)', paddingLeft: '1rem' }}>
+                            <div className="pulse-circle" style={{ background: tunnelStatus === 'online' ? '#16a34a' : tunnelStatus === 'checking' ? 'var(--primary-yellow)' : 'var(--primary-red)' }}></div>
+                            <span style={{ color: tunnelStatus === 'offline' ? 'var(--primary-red)' : '' }}>
+                                TUNNEL: {tunnelStatus.toUpperCase()}
+                            </span>
+                            {tunnelStatus === 'offline' && (
+                                <button 
+                                    onClick={restartTunnel} 
+                                    disabled={isRestarting}
+                                    style={{ 
+                                        marginLeft: '10px', fontSize: '0.65rem', padding: '3px 8px',
+                                        background: 'var(--primary-red)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 900
+                                    }}>
+                                    {isRestarting ? 'RESTARTING...' : 'RESTART'}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
