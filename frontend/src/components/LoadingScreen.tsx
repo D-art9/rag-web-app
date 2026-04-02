@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Network, Search, Database, Cpu, Activity, Zap } from 'lucide-react';
 
 const technicalLogs = [
     "[INIT] SYSTEM_CONTACT: ESTABLISHING_YOUTUBE_BRIDGE...",
@@ -8,17 +9,17 @@ const technicalLogs = [
     "[P2] VISION_SYNC: GEMINI_1.5_FLASH_ANALYZING_THUMBNAIL...",
     "[SYS] SYNC: ALIGNING_MULTIMODAL_VECTORS...",
     "[FUSION] VECTOR_CORE: CALCULATING_SEMANTIC_EMBEDDINGS (1536d)...",
-    "[DB] MONGODB_SAVE: SECURING_DOCUMENT_STORAGE...",
+    "[DB] NATIVE_STORAGE: WRITING_JSON_VECTORS_TO_DISK...",
     "[RAG] MISSION_READY: INITIALIZING_CONSTRUCTIVIST_WORKSPACE..."
 ];
 
-const infraStack = ["MONGODB_ATLAS", "GEMINI_1.5_FLASH", "PINECONE_VEC", "EXPRESS_v4.1", "T_TRANSFORMERS"];
+const infraStack = ["MONGODB_ATLAS", "GEMINI_2.5_FLASH", "NATIVE_VEC_JSON", "EXPRESS_v4.1", "T_TRANSFORMERS"];
 
 const DATA_STEPS = [
-    { title: "AUDIO_INGESTION", desc: "Extracting high-fidelity MP3 streams from YouTube source.", color: "var(--primary-red)" },
-    { title: "VISION_SAMPLING", desc: "Performing deep neural analysis on visual metadata and frames.", color: "var(--primary-blue)" },
-    { title: "NEURAL_VECTORIZATION", desc: "Converting multimodal data into 1536-dimensional math vectors.", color: "var(--primary-yellow)" },
-    { title: "RAG_SYNERGY", desc: "Mapping visual insights against audio transcripts for 100% accuracy.", color: "var(--border-color)" }
+    { title: "AUDIO_INGESTION", desc: "Extracting high-fidelity MP3 streams from YouTube source.", icon: <Network /> },
+    { title: "VISION_SAMPLING", desc: "Performing deep neural analysis on visual metadata and frames.", icon: <Search /> },
+    { title: "NEURAL_VECTORIZATION", desc: "Converting multimodal data into 1536-dimensional math vectors.", icon: <Cpu /> },
+    { title: "RAG_SYNERGY", desc: "Mapping visual insights against audio transcripts for 100% accuracy.", icon: <Zap /> }
 ];
 
 const LoadingScreen: React.FC<{ message?: string }> = ({ message = "SYSTEM_INGESTION_ACTIVE" }) => {
@@ -42,197 +43,113 @@ const LoadingScreen: React.FC<{ message?: string }> = ({ message = "SYSTEM_INGES
     }, []);
 
     return (
-        <div className="loading-v6">
-            <div className="bauhaus-bg-grid"></div>
+        <div className="loading-dark-industrial scroll-panel">
+            {/* TOP HEADER */}
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', padding: '0 20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div className="pulse-cyan" />
+                    <span className="industrial-label" style={{ margin: 0 }}>MISSION_ACTIVE: {message}</span>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                    <div className="industrial-label" style={{ color: 'var(--text-muted)' }}>SCRIPTYT_v2.1_CORE {" // "} {infraStatus}</div>
+                    <h1 style={{ fontWeight: 900, fontSize: '24px', letterSpacing: '2px', margin: '4px 0 0 0', color: 'white' }}>SYSTEM_CONVERGENCE</h1>
+                </div>
+                <div className="industrial-label" style={{ color: 'var(--accent-cyan)' }}>
+                    CPU_READY: {counter} {" // "} VEC_DIM: 1536d
+                </div>
+            </header>
 
-            {/* MAIN INTERFACE */}
-            <div className="view-container">
+            {/* MAIN VISUALIZER GRID */}
+            <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr 300px', gap: '40px', flex: 1, padding: '0 20px', alignItems: 'center' }}>
                 
-                {/* TOP HEADER - SYSTEM STATUS */}
-                <header className="system-hdr bauhaus-border-bottom">
-                    <div className="hdr-meta">
-                        <span className="dot pulse"></span>
-                        <span className="st-txt">MISSION_ACTIVE: {message}</span>
-                    </div>
-                    <div className="hdr-title-group">
-                        <div className="hdr-title">SCRIPTYT_v2.1_CORE {" // "} {infraStatus}</div>
-                        <h1 className="h-xxl">SYSTEM_CONVERGENCE</h1>
-                    </div>
-                    <div className="hdr-telemetry">CPU_READY: {counter} {" // "} VEC_DIM: 1536d</div>
-                </header>
+                {/* LEFT INFRA PANEL */}
+                <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: '24px' }}>
+                    <div className="industrial-label" style={{ marginBottom: '16px', color: 'var(--primary-yellow)' }}>ACTIVE_STACK</div>
+                    {infraStack.map((s, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            <span style={{ color: 'var(--accent-cyan)', fontSize: '10px', fontFamily: 'monospace' }}>0{i+1}</span>
+                            <span style={{ color: 'white', fontSize: '12px', fontWeight: 600 }}>{s}</span>
+                        </div>
+                    ))}
+                </div>
 
-                {/* THE CORE VISUALIZER ENGINE */}
-                <div className="visualizer-field">
+                {/* CENTER HOLOGRAPHIC CORE */}
+                <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                    {/* Ring animation */}
+                    <div className="holo-ring"></div>
+                    <div className="holo-ring reverse-ring"></div>
                     
-                    {/* INPUT SOURCE */}
-                    <div className="ingestion-node bauhaus-border">
-                        <div className="node-caption">00_YT_SOURCE</div>
-                        <div className="node-icon">🛰️</div>
-                        <div className="node-status">STABILIZED</div>
-                    </div>
-
-                    {/* DYNAMIC FLOW CHANNELS */}
-                    <div className="flow-complex">
-                        <div className="channel audio-channel">
-                            <div className="beam beam-red"></div>
-                            <div className={`intel-card ${activeStep === 0 ? 'active' : ''}`}>
-                                <label style={{ color: 'var(--primary-red)' }}>TIER_01: AUDIO_CORE</label>
-                                <p>{DATA_STEPS[0].desc}</p>
-                            </div>
+                    {/* Core node */}
+                    <div className="glass-card" style={{ 
+                        position: 'relative', zIndex: 10, padding: '40px', 
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', 
+                        border: '1px solid var(--accent-cyan)',
+                        boxShadow: '0 0 30px rgba(0,242,255,0.1)'
+                    }}>
+                        <div style={{ color: 'var(--accent-cyan)', marginBottom: '16px' }}>
+                            {DATA_STEPS[activeStep].icon}
                         </div>
-
-                        <div className="channel vision-channel">
-                            <div className="beam beam-blue"></div>
-                            <div className={`intel-card ${activeStep === 1 ? 'active' : ''}`}>
-                                <label style={{ color: 'var(--primary-blue)' }}>TIER_02: VISION_SYNC</label>
-                                <p>{DATA_STEPS[1].desc}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* CONVERGENCE POINT */}
-                    <div className="convergence-node">
-                        <div className={`fusion-ring ${activeStep >= 2 ? 'spinning' : ''}`}></div>
-                        <div className="node-center bauhaus-border bauhaus-shadow">
-                            <div className="node-caption">03_VECTOR_FUSION</div>
-                            <div className="fusion-status">{DATA_STEPS[activeStep].title}</div>
-                        </div>
-                        
-                        {/* FINAL CONTEXT LABEL */}
-                        <div className={`context-desc ${activeStep >= 2 ? 'fade-in' : ''}`}>
-                           [!] {DATA_STEPS[activeStep].desc}
-                        </div>
+                        <div className="industrial-label" style={{ color: 'var(--accent-cyan)', margin: 0, fontSize: '14px' }}>{DATA_STEPS[activeStep].title}</div>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center', maxWidth: '200px', margin: '16px 0 0 0', lineHeight: 1.5 }}>
+                            {DATA_STEPS[activeStep].desc}
+                        </p>
                     </div>
                 </div>
 
-                {/* SIDE INFRA STACK */}
-                <div className="infra-stack-view">
-                   {infraStack.map((s, i) => (
-                       <div key={i} className="stack-row">
-                           <span className="row-num">0{i+1}</span>
-                           <span className="row-val">{s}</span>
-                       </div>
-                   ))}
+                {/* RIGHT PIPELINE PANEL */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {DATA_STEPS.map((step, idx) => (
+                        <div key={idx} className="glass-card" style={{ 
+                            padding: '16px', 
+                            borderLeft: activeStep === idx ? '3px solid var(--accent-cyan)' : '3px solid rgba(255,255,255,0.05)',
+                            opacity: activeStep === idx ? 1 : 0.4,
+                            transition: 'all 0.3s'
+                        }}>
+                            <div className="industrial-label" style={{ fontSize: '10px' }}>PHASE_0{idx+1}</div>
+                            <div style={{ color: 'white', fontSize: '12px', fontWeight: 600, marginTop: '4px' }}>{step.title}</div>
+                        </div>
+                    ))}
                 </div>
+            </div>
 
-                {/* BOTTOM LOG STREAM */}
-                <footer className="footer-logs bauhaus-border-top">
-                    <div className="log-prefix bg-red">DATAFLOW_LOG_v2.1</div>
-                    <div className="log-msg">{technicalLogs[logIndex]}</div>
-                    <div className="log-timer">ELAPSED: {(counter / 100).toFixed(1)}s</div>
-                </footer>
+            {/* BOTTOM LOGS */}
+            <div className="glass-card" style={{ display: 'flex', alignItems: 'center', padding: '16px 24px', margin: '40px 20px 0 20px', gap: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Activity size={14} color="var(--primary-yellow)" />
+                    <div className="industrial-label" style={{ color: 'var(--primary-yellow)', margin: 0 }}>DATAFLOW_LOG</div>
+                </div>
+                <div style={{ flex: 1, fontFamily: 'monospace', fontSize: '13px', color: 'var(--text-muted)' }}>
+                    {technicalLogs[logIndex]}
+                </div>
+                <div style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--accent-cyan)' }}>
+                    ELAPSED: {(counter / 100).toFixed(1)}s
+                </div>
             </div>
 
             <style>{`
-                .loading-v6 {
-                    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-                    background: #F4F4F4; z-index: 1000; overflow: hidden;
-                    font-family: 'Outfit', sans-serif; color: #1a1a1a;
+                .loading-dark-industrial {
+                    display: flex; flexDirection: column; height: 100vh;
+                    background: var(--bg-core); color: white; padding: 20px;
+                    justify-content: space-between; overflow: hidden;
                 }
-                .bauhaus-bg-grid {
-                    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-                    background-image: linear-gradient(#ddd 1px, transparent 1px), linear-gradient(90deg, #ddd 1px, transparent 1px);
-                    background-size: 60px 60px; opacity: 0.15; z-index: -1;
+                .pulse-cyan {
+                    width: 8px; height: 8px; background: var(--accent-cyan); border-radius: 50%;
+                    animation: pulse-c 1s infinite alternate;
                 }
-
-                .view-container {
-                    height: 100vh; display: grid;
-                    grid-template-rows: auto 1fr auto;
-                    grid-template-columns: 1fr 220px;
-                    padding: 2rem 4rem;
-                    gap: 0 3rem;
-                }
-
-                /* HEADER */
-                .system-hdr {
-                    display: flex; justify-content: space-between; align-items: center;
-                    padding-bottom: 2rem; margin-bottom: 2rem;
-                    grid-column: 1 / -1;
-                }
-                .hdr-title-group { text-align: center; flex-grow: 1; }
-                .hdr-title { font-weight: 900; font-size: 1.2rem; letter-spacing: 0.2em; color: var(--primary-red); margin-bottom: 0.5rem; }
-                .hdr-meta { display: flex; align-items: center; gap: 1rem; font-weight: 900; font-size: 0.7rem; width: 300px; }
-                .hdr-telemetry { font-weight: 900; font-size: 0.7rem; color: #666; width: 300px; text-align: right; }
-                .h-xxl { font-weight: 900; font-size: 3.5rem; letter-spacing: -0.05em; margin: 0; line-height: 1; }
-
-                .pulse { width: 10px; height: 10px; background: var(--primary-red); border-radius: 50%; display: block; }
-                @keyframes pulse-anim { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.5); } 100% { opacity: 1; transform: scale(1); } }
-                .pulse { animation: pulse-anim 1s infinite; }
-
-                /* FIELD */
-                .visualizer-field {
-                    grid-column: 1; grid-row: 2;
-                    display: flex; flex-direction: column; align-items: center; position: relative;
-                }
-
-                .ingestion-node {
-                    background: white; padding: 1.5rem 3rem; text-align: center; position: relative;
-                    box-shadow: 10px 10px 0px black; transition: transform 0.3s;
-                }
-                .node-caption { font-size: 0.6rem; font-weight: 900; color: #999; margin-bottom: 0.5rem; }
-                .node-icon { font-size: 2rem; margin: 0.5rem 0; }
-                .node-status { font-weight: 900; font-size: 0.7rem; color: var(--primary-blue); }
-
-                /* FLOW */
-                .flow-complex { display: flex; gap: clamp(4rem, 12vw, 15rem); width: 100%; justify-content: center; }
-                .channel { position: relative; width: 6px; height: 250px; background: #ddd; }
+                @keyframes pulse-c { 0% { opacity: 0.3; transform: scale(1); box-shadow: 0 0 0 transparent; } 100% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 10px var(--accent-cyan); } }
                 
-                .beam { position: absolute; top: 0; left: -2px; width: 10px; height: 60px; filter: blur(2px); }
-                .beam-red { background: var(--primary-red); animation: beam-flow 1.5s infinite linear; }
-                .beam-blue { background: var(--primary-blue); animation: beam-flow 2s infinite linear 0.5s; }
-
-                @keyframes beam-flow { 0% { top: -60px; opacity: 0; } 50% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
-
-                /* CARDS */
-                .intel-card {
-                    position: absolute; left: 30px; width: 280px; opacity: 0; transform: translateX(20px);
-                    transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: white;
-                    padding: 1.5rem; border-left: 5px solid; box-shadow: 5px 5px 0px rgba(0,0,0,0.05);
+                .holo-ring {
+                    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                    width: 300px; height: 300px; border-radius: 50%;
+                    border: 1px dashed rgba(0,242,255,0.2);
+                    animation: spin-r 15s linear infinite;
+                    pointer-events: none;
                 }
-                .intel-card.active { opacity: 1; transform: translateX(0); }
-                .intel-card label { display: block; font-weight: 900; font-size: 0.7rem; margin-bottom: 0.5rem; letter-spacing: 0.1em; }
-                .intel-card p { font-size: 0.9rem; font-weight: 500; margin: 0; line-height: 1.4; }
-
-                /* FUSION */
-                .convergence-node { margin-top: 2rem; position: relative; text-align: center; }
-                .node-center { background: white; padding: 2rem 4rem; z-index: 10; position: relative; min-width: 320px; }
-                .fusion-status { font-weight: 900; font-size: 1.2rem; color: #1a1a1a; margin-top: 0.5rem; }
-                
-                .fusion-ring {
-                    position: absolute; top: -50px; left: 50%; transform: translateX(-50%);
-                    width: 440px; height: 440px; border: 2px dashed #999; border-radius: 50%;
-                    pointer-events: none; opacity: 0.2;
+                .reverse-ring {
+                    width: 400px; height: 400px; border: 1px solid rgba(255,255,255,0.02);
+                    animation: spin-r 25s linear infinite reverse;
                 }
-                .fusion-ring.spinning { animation: rot 20s infinite linear; opacity: 0.5; border-color: var(--primary-yellow); }
-                @keyframes rot { from { transform: translateX(-50%) rotate(0deg); } to { transform: translateX(-50%) rotate(360deg); } }
-
-                .context-desc {
-                    margin-top: 3rem; font-weight: 900; font-size: 0.9rem; color: var(--primary-red);
-                    max-width: 500px; line-height: 1.4; opacity: 0; transition: opacity 0.5s;
-                }
-                .context-desc.fade-in { opacity: 1; }
-
-                /* SIDE STACK */
-                .infra-stack-view {
-                    grid-column: 2; grid-row: 2;
-                    align-self: start; padding-top: 1rem;
-                }
-                .stack-row { display: flex; gap: 1rem; border-bottom: 2px solid rgba(0,0,0,0.05); padding: 1rem 0; }
-                .row-num { font-weight: 900; color: #999; font-size: 0.7rem; }
-                .row-val { font-weight: 900; font-size: 0.8rem; }
-
-                /* LOGS */
-                .footer-logs {
-                    grid-column: 1 / -1;
-                    display: flex; height: 80px; align-items: center; padding: 0 2rem; background: white;
-                }
-                .log-prefix { height: 100%; display: flex; align-items: center; padding: 0 2rem; color: white; font-weight: 900; font-size: 0.7rem; }
-                .log-msg { flex-grow: 1; padding: 0 3rem; font-weight: 900; font-size: 1.1rem; letter-spacing: -0.02em; }
-                .log-timer { font-weight: 900; font-size: 0.8rem; color: #999; }
-
-                .bauhaus-border-bottom { border-bottom: 4px solid #1a1a1a; }
-                .bauhaus-border-top { border-top: 4px solid #1a1a1a; }
-                .bg-red { background: var(--primary-red); }
+                @keyframes spin-r { 100% { transform: translate(-50%, -50%) rotate(360deg); } }
             `}</style>
         </div>
     );
