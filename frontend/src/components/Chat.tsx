@@ -1,7 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import mermaid from 'mermaid';
 import { Maximize2, Minimize2 } from 'lucide-react';
+
+mermaid.initialize({ theme: 'dark', fontFamily: 'monospace' });
+
+const MermaidBlock = ({ chart }: { chart: string }) => {
+    const [svg, setSvg] = useState('');
+    
+    useEffect(() => {
+        const renderChart = async () => {
+            try {
+                const id = `mermaid-${Date.now()}`;
+                const result = await mermaid.render(id, chart);
+                setSvg(result.svg);
+            } catch (e) {
+                // Ignore parsing errors during generative token streaming
+            }
+        };
+        if (chart) renderChart();
+    }, [chart]);
+
+    return svg ? (
+        <div className="mermaid-rendered glass-card" dangerouslySetInnerHTML={{ __html: svg }} 
+             style={{ padding: '20px', background: 'rgba(0,0,0,0.5)', margin: '16px 0', border: '1px solid var(--accent-cyan)', textAlign: 'center' }} />
+    ) : (
+        <pre><code className="language-mermaid">{chart}</code></pre>
+    );
+};
 
 interface ChatProps {
     videoUrl: string;
@@ -188,7 +215,30 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
                                 </div>
                                 <div className="glass-card ai-content" style={{ borderLeft: '3px solid var(--accent-blue)', padding: '20px 24px' }}>
                                     <div className="markdown-body" style={{ color: 'var(--text-main)', fontSize: '15px', lineHeight: '1.75' }}>
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                                        <ReactMarkdown 
+                                            remarkPlugins={[remarkGfm]}
+                                            components={{
+                                                code({node, inline, className, children, ...props}: any) {
+                                                    const match = /language-(\w+)/.exec(className || '');
+                                                    if (!inline && match && match[1] === 'mermaid') {
+                                                        return <MermaidBlock chart={String(children).replace(/\n$/, '')} />;
+                                                    }
+                                                    return !inline ? (
+                                                        <pre className={className} {...props}>
+                                                            <code className={className} {...props}>
+                                                                {children}
+                                                            </code>
+                                                        </pre>
+                                                    ) : (
+                                                        <code className={className} {...props}>
+                                                            {children}
+                                                        </code>
+                                                    );
+                                                }
+                                            }}
+                                        >
+                                            {msg.text}
+                                        </ReactMarkdown>
                                     </div>
                                     {msg.sources && msg.sources.length > 0 && (
                                         <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-light)', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
