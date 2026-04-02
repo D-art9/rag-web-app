@@ -43,6 +43,33 @@ const Dataflow: React.FC = () => {
                 ))}
             </div>
 
+            <div className="glass-card" style={{ 
+                marginTop: '40px', 
+                maxWidth: '800px', 
+                margin: '40px auto 0',
+                borderLeft: '4px solid var(--primary-yellow)',
+                background: 'linear-gradient(90deg, rgba(234, 179, 8, 0.05) 0%, rgba(20, 20, 20, 0.8) 100%)'
+            }}>
+                <div className="industrial-label" style={{ color: 'var(--primary-yellow)', marginBottom: '16px' }}>
+                    <Zap size={14} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />
+                    MULTIMODAL_INTEGRATION_MATRIX
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '16px' }}>
+                    <div>
+                        <div style={{ color: 'white', fontSize: '13px', fontWeight: 600, letterSpacing: '1px' }}>01. VISION_DECODING</div>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '6px', lineHeight: 1.6 }}>
+                            Deep visual inspection of video thumbnails and frame data. The Gemini 2.5 Flash core natively processes visual tokens, allowing the system to decode creator intent, tone, and context purely from visual imagery before the transcript is even read.
+                        </p>
+                    </div>
+                    <div>
+                        <div style={{ color: 'white', fontSize: '13px', fontWeight: 600, letterSpacing: '1px' }}>02. FLUID_CONTEXT_FUSION</div>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '6px', lineHeight: 1.6 }}>
+                            Cross-modal synthesis fuses text-based NLP (transcripts) with rich image embeddings. This enables the AI to detect nuances like sarcasm or clickbait—specifically when the visual thumbnail imagery directly contradicts the spoken transcript or video title.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <div className="glass-card" style={{ marginTop: '60px', opacity: 0.5, textAlign: 'center' }}>
                 <div className="industrial-label">HARDWARE_LOCK: VERIFIED</div>
                 <p style={{ fontSize: '11px' }}>System running on unified Render Cloud with Persistent Python Extractor Tunnel.</p>
