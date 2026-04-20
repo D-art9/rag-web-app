@@ -40,7 +40,7 @@ export const transcriptService = {
         // SYSTEM OVERRIDE: Render's environment variable is stuck on a zombified localtunnel.
         // We are strictly enforcing this fresh tunnel for production, but keeping localhost for local dev.
         const isLocalDev = process.env.EXTRACTOR_SERVICE_URL?.includes('localhost');
-        const primaryUrl = isLocalDev ? 'http://localhost:8000' : 'https://scriptyt-neural-fusion-99-dev.loca.lt';
+        const primaryUrl = isLocalDev ? 'http://localhost:8000' : 'https://scriptyt-extractor-node.loca.lt';
         const fallbackUrl = process.env.EXTRACTOR_FALLBACK_URL;
 
         console.log(`[INGEST] Attempting extraction (PRIMARY) via: ${primaryUrl} for: ${videoUrl}`);
