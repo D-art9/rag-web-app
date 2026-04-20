@@ -11,8 +11,8 @@ let visionModel: any = null;
 
 if (API_KEY) {
     genAI = new GoogleGenerativeAI(API_KEY);
-    // Synchronized with the stable 2.5 core for unified multimodal consistency.
-    visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    // Synchronized with the stable 3 Flash Preview core for unified multimodal consistency.
+    visionModel = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
 }
 
 export const visionService = {
