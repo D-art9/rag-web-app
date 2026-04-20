@@ -7,7 +7,7 @@ const Dataflow: React.FC = () => {
         { icon: <Activity />, title: '02_EXTRACTION', desc: 'Dialect-aware transcript retrieval with Fuzzy-Language-Bridge logic (en-IN/GB/US).' },
         { icon: <Database />, title: '03_VECTORIZATION', desc: 'Cloud-TPU batch embedding using gemini-embedding-001 (TPU Optimized).' },
         { icon: <Search />, title: '04_NEURAL_RECALL', desc: 'Cosine similarity recall with hard-filtered bias for ultra-low hallucinations.' },
-        { icon: <Cpu />, title: '05_SYNTHESIS', desc: 'Multimodal reasoning engine powered by Gemini 2.5 Flash Core.' },
+        { icon: <Cpu />, title: '05_SYNTHESIS', desc: 'Multimodal reasoning engine powered by Gemini 1.5 Flash Core.' },
         { icon: <Zap />, title: '06_STREAM_FLUIDITIY', desc: 'Real-time SSE event delivery with non-blocking auto-scroll containment.' }
     ];
 
@@ -58,7 +58,7 @@ const Dataflow: React.FC = () => {
                     <div>
                         <div style={{ color: 'white', fontSize: '13px', fontWeight: 600, letterSpacing: '1px' }}>01. VISION_DECODING</div>
                         <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '6px', lineHeight: 1.6 }}>
-                            Deep visual inspection of video thumbnails and frame data. The Gemini 2.5 Flash core natively processes visual tokens, allowing the system to decode creator intent, tone, and context purely from visual imagery before the transcript is even read.
+                            Deep visual inspection of video thumbnails and frame data. The Gemini 1.5 Flash core natively processes visual tokens, allowing the system to decode creator intent, tone, and context purely from visual imagery before the transcript is even read.
                         </p>
                     </div>
                     <div>
