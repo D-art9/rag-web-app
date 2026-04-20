@@ -10,10 +10,10 @@ let model: any = null;
 
 if (API_KEY) {
     genAI = new GoogleGenerativeAI(API_KEY);
-    // Locked into gemini-1.5-flash which is the stable multimodal model.
-    // Fixed: 'gemini-2.5-flash' was an invalid model identifier.
-    model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    console.log('[GEMINI] ✓ SYSTEM_READY: 1.5 Flash Core Brain online.');
+    // Locked into gemini-2.5-flash which is the stable multimodal model.
+    // Fixed: 'gemini-1.5-flash' was deprecated and no longer available.
+    model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    console.log('[GEMINI] ✓ SYSTEM_READY: 2.5 Flash Core online.');
 } else {
     console.error('[CRITICAL] GEMINI_API_KEY is not set. All AI features will be locked.');
 }

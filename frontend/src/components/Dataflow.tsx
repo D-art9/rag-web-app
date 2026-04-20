@@ -7,7 +7,7 @@ const Dataflow: React.FC = () => {
         { icon: <Activity />, title: '02_EXTRACTION', desc: 'Dialect-aware transcript retrieval with Fuzzy-Language-Bridge logic (en-IN/GB/US).' },
         { icon: <Database />, title: '03_VECTORIZATION', desc: 'Cloud-TPU batch embedding using gemini-embedding-001 (TPU Optimized).' },
         { icon: <Search />, title: '04_NEURAL_RECALL', desc: 'Cosine similarity recall with hard-filtered bias for ultra-low hallucinations.' },
-        { icon: <Cpu />, title: '05_SYNTHESIS', desc: 'Multimodal reasoning engine powered by Gemini 1.5 Flash Core.' },
+        { icon: <Cpu />, title: '05_SYNTHESIS', desc: 'Multimodal reasoning engine powered by Gemini 2.5 Flash Core.' },
         { icon: <Zap />, title: '06_STREAM_FLUIDITIY', desc: 'Real-time SSE event delivery with non-blocking auto-scroll containment.' }
     ];
 
