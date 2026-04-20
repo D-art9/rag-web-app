@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Network, Search, Database, Cpu, Activity, Zap } from 'lucide-react';
+import { Network, Search, Cpu, Activity, Zap } from 'lucide-react';
 
 const technicalLogs = [
     "[INIT] SYSTEM_CONTACT: ESTABLISHING_YOUTUBE_BRIDGE...",
