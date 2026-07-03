@@ -50,12 +50,12 @@ export const transcriptService = {
         if (apiKey) {
             console.log(`[INGEST] Fetching transcript via RapidAPI for video: ${videoId}`);
             try {
-                const response = await axios.get('https://youtube-transcript.p.rapidapi.com/transcript', {
+                const response = await axios.get('https://youtube-transcripts.p.rapidapi.com/youtube/transcript', {
                     params: {
                         url: videoUrl
                     },
                     headers: {
-                        'x-rapidapi-host': 'youtube-transcript.p.rapidapi.com',
+                        'x-rapidapi-host': 'youtube-transcripts.p.rapidapi.com',
                         'x-rapidapi-key': apiKey
                     },
                     timeout: 60000
@@ -71,7 +71,7 @@ export const transcriptService = {
                 } else if (responseData.body && typeof responseData.body === 'string') {
                     transcript = responseData.body;
                 } else {
-                    const lines = responseData.lines || responseData.body || (Array.isArray(responseData) ? responseData : null);
+                    const lines = responseData.content || responseData.lines || responseData.body || (Array.isArray(responseData) ? responseData : null);
                     if (Array.isArray(lines)) {
                         transcript = lines.map((item: any) => typeof item === 'string' ? item : (item.text || '')).join(' ');
                     } else {
