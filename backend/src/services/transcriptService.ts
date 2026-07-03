@@ -32,13 +32,80 @@ export const transcriptService = {
 
     /**
      * Extracts transcript and metadata.
-     * Implements a 2-tier resilience layer:
-     * 1. Automatic retries on the primary service.
-     * 2. Fallback to a secondary service if primary is truly down or rate-limited.
+     * Uses RapidAPI YouTube Transcripts endpoint if RAPIDAPI_KEY is configured,
+     * otherwise falls back to the local Python extractor microservice.
      */
     extractAll: async (videoUrl: string): Promise<{ transcript: string; title: string; thumbnail: string }> => {
-        // SYSTEM OVERRIDE: Render's environment variable is stuck on a zombified localtunnel.
-        // We are strictly enforcing this fresh tunnel for production, but keeping localhost for local dev.
+        const apiKey = process.env.RAPIDAPI_KEY;
+
+        // Helper to extract YouTube video ID
+        const getYouTubeVideoId = (url: string): string => {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : '';
+        };
+
+        const videoId = getYouTubeVideoId(videoUrl);
+
+        if (apiKey) {
+            console.log(`[INGEST] Fetching transcript via RapidAPI for video: ${videoId}`);
+            try {
+                const response = await axios.get('https://youtube-transcripts.p.rapidapi.com/transcript', {
+                    params: {
+                        url: videoUrl,
+                        videoId: videoId,
+                        lang: 'en'
+                    },
+                    headers: {
+                        'x-rapidapi-host': 'youtube-transcripts.p.rapidapi.com',
+                        'x-rapidapi-key': apiKey
+                    },
+                    timeout: 60000
+                });
+
+                const responseData = response.data as any;
+                let transcript = '';
+                // Handle different response structures: array of lines or raw string
+                if (typeof responseData === 'string') {
+                    transcript = responseData;
+                } else if (responseData.transcript && typeof responseData.transcript === 'string') {
+                    transcript = responseData.transcript;
+                } else if (responseData.body && typeof responseData.body === 'string') {
+                    transcript = responseData.body;
+                } else {
+                    const lines = responseData.lines || responseData.body || (Array.isArray(responseData) ? responseData : null);
+                    if (Array.isArray(lines)) {
+                        transcript = lines.map((item: any) => typeof item === 'string' ? item : (item.text || '')).join(' ');
+                    } else {
+                        // Direct transcript array check
+                        const transcriptArray = responseData.transcript || responseData.captions;
+                        if (Array.isArray(transcriptArray)) {
+                            transcript = transcriptArray.map((item: any) => typeof item === 'string' ? item : (item.text || '')).join(' ');
+                        } else {
+                            throw new Error('Unexpected RapidAPI response format');
+                        }
+                    }
+                }
+
+                if (!transcript) {
+                    throw new Error('No transcript found in RapidAPI response');
+                }
+
+                const title = responseData.title || 'YouTube Video';
+                const thumbnail = responseData.thumbnail || (videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : '');
+
+                return {
+                    transcript: transcript.trim(),
+                    title,
+                    thumbnail
+                };
+            } catch (error: any) {
+                console.error('[INGEST] RapidAPI Extraction Failed:', error.message);
+                throw new Error(`RapidAPI Extraction Failed: ${error?.response?.data?.message || error.message}`);
+            }
+        }
+
+        // FALLBACK: Local microservice flow if no RapidAPI key is set
         const isLocalDev = process.env.EXTRACTOR_SERVICE_URL?.includes('localhost');
         const primaryUrl = isLocalDev ? 'http://localhost:8000' : 'https://scriptyt-extractor-node.loca.lt';
         const fallbackUrl = process.env.EXTRACTOR_FALLBACK_URL;
@@ -46,17 +113,13 @@ export const transcriptService = {
         console.log(`[INGEST] Attempting extraction (PRIMARY) via: ${primaryUrl} for: ${videoUrl}`);
 
         try {
-            // First attempt to Primary with internal retry logic
             const data = await transcriptService._requestWithRetry(primaryUrl, { url: videoUrl });
             return transcriptService._parseResponse(data);
 
         } catch (error: any) {
             const status = error?.response?.status;
-            const isRateLimit = status === 429 || error?.response?.data?.detail?.includes('429');
-
             console.warn(`[INGEST] PRIMARY Extraction Failed definitively (Status: ${status}).`);
 
-            // If we have a fallback URL, use it on 429 (Rate limit) or if primary is dead
             if (fallbackUrl) {
                 console.log(`[INGEST] 🔄 Retrying with FALLBACK Service: ${fallbackUrl}`);
                 try {
@@ -69,7 +132,6 @@ export const transcriptService = {
                 }
             }
 
-            // No fallback, throw original error
             throw new Error(`Extraction Failed: ${error?.response?.data?.detail || error.message}`);
         }
     },
