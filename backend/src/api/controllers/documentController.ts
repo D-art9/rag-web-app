@@ -4,6 +4,9 @@ import DocumentModel from '../../models/Document';
 import { getVectorDBClient } from '../../vectordb/client';
 import mongoose from 'mongoose';
 
+import { taskService } from '../../services/taskService';
+import crypto from 'crypto';
+
 export const uploadDocument = async (req: Request, res: Response) => {
     try {
         const { url } = req.body;
@@ -12,16 +15,22 @@ export const uploadDocument = async (req: Request, res: Response) => {
         }
 
         console.log(`[CONTROLLER] Received upload request for: ${url}`);
-        const document = await documentService.uploadDocument(url);
+        
+        // Generate task ID
+        const taskId = crypto.randomBytes(8).toString('hex');
+        taskService.createTask(taskId);
 
-        res.status(201).json(document);
+        // Run ingestion process asynchronously in background
+        documentService.uploadDocument(url, taskId).catch(err => {
+            console.error(`[BACKGROUND_INGESTION_FAULT] Task ${taskId}:`, err.message);
+        });
+
+        // Respond immediately
+        res.status(202).json({ taskId });
     } catch (error: any) {
         console.error('Upload Controller Error:', error);
         const detailedError = error.message || 'Unknown server error';
-        const isCaptionError = detailedError.toLowerCase().includes('captions') ||
-            detailedError.toLowerCase().includes('transcript');
-
-        res.status(isCaptionError ? 400 : 500).json({
+        res.status(500).json({
             message: detailedError,
             error: detailedError
         });

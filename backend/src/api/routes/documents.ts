@@ -1,7 +1,12 @@
 import express from 'express';
 import { uploadDocument, getDocuments, getDocument, deleteDocument, getDocumentNews } from '../controllers/documentController';
 
+import progressRouter from './progress';
+
 const router = express.Router();
+
+// SSE progress stream for background upload task
+router.use('/progress', progressRouter);
 
 // Upload a YouTube video URL for analysis
 router.post('/upload', uploadDocument);

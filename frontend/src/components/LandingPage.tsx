@@ -10,6 +10,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onUrlSubmit, onNavigate }) =>
   const [url, setUrl] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [typedTitle, setTypedTitle] = useState('');
+  const [progressMessage, setProgressMessage] = useState('Queued for processing...');
   
   const fullTitle = "ANALYZER";
 
@@ -28,6 +29,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onUrlSubmit, onNavigate }) =>
     if (!url.trim() || isAnalyzing) return;
 
     setIsAnalyzing(true);
+    setProgressMessage('Queued for processing...');
+
     try {
       const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://scriptyt-test-laptop.loca.lt/api';
       const response = await fetch(`${API_BASE_URL}/documents/upload`, {
@@ -37,17 +40,53 @@ const LandingPage: React.FC<LandingPageProps> = ({ onUrlSubmit, onNavigate }) =>
       });
 
       const data = await response.json();
-      if (data.id) onUrlSubmit(url, data.id);
-      else throw new Error('MISSION_ABORTED: NO_DATA_BACK');
-    } catch (err) {
+      if (data.taskId) {
+        // SSE connection for live progress status updates
+        const eventSource = new EventSource(`${API_BASE_URL}/documents/progress/${data.taskId}`);
+
+        eventSource.onmessage = (event) => {
+          try {
+            const taskData = JSON.parse(event.data);
+            if (taskData.message) {
+              setProgressMessage(`[${taskData.progress}%] ${taskData.message}`);
+            }
+
+            if (taskData.status === 'completed' && taskData.videoId) {
+              eventSource.close();
+              onUrlSubmit(url, taskData.videoId);
+            }
+
+            if (taskData.status === 'failed') {
+              eventSource.close();
+              alert(`Analysis Failed: ${taskData.error || 'Unknown Ingestion Error'}`);
+              setIsAnalyzing(false);
+            }
+          } catch (err) {
+            console.error('SSE JSON parse error:', err);
+          }
+        };
+
+        eventSource.onerror = (err) => {
+          console.error('SSE Connection error:', err);
+          eventSource.close();
+          // Fallback if SSE fails (in dev environments)
+          alert('Stream connection lost. Please try uploading again.');
+          setIsAnalyzing(false);
+        };
+
+      } else if (data.id) {
+        onUrlSubmit(url, data.id);
+      } else {
+        throw new Error('MISSION_ABORTED: NO_DATA_BACK');
+      }
+    } catch (err: any) {
       console.error(err);
-      alert('Network Error: [CONN_FAILURE_OR_503]');
-    } finally {
+      alert(`Network Error: ${err.message || '[CONN_FAILURE_OR_503]'}`);
       setIsAnalyzing(false);
     }
   };
 
-  if (isAnalyzing) return <LoadingScreen message="CONVERGING_NEURAL_PIPELINES..." />;
+  if (isAnalyzing) return <LoadingScreen message={progressMessage} />;
 
   return (
     <div className="bauhaus-landing">

@@ -67,12 +67,20 @@ function chunkTranscript(transcript: string, maxChunkSize: number = 1000): { tex
  * Coordinates between transcription and vector indexing.
  */
 class DocumentService {
-    async uploadDocument(url: string): Promise<Document> {
+    async uploadDocument(url: string, taskId?: string): Promise<Document> {
+        const { taskService } = await import('./taskService');
         try {
             console.log(`[DOCUMENT_SERVICE] Starting upload for: ${url}`);
+            if (taskId) {
+                taskService.updateTask(taskId, { status: 'processing', progress: 15, message: 'Downloading transcript and metadata...' });
+            }
 
             // FIX: Single call to microservice instead of two parallel calls
             const { transcript, title, thumbnail } = await transcriptService.extractAll(url);
+
+            if (taskId) {
+                taskService.updateTask(taskId, { progress: 40, message: 'Classifying video content...' });
+            }
 
             // 1. Classify Category using Gemini
             let category = 'general';
@@ -108,6 +116,10 @@ class DocumentService {
                 console.warn('[DOCUMENT_SERVICE] ✗ Gemini classification failed. Defaulting to general.');
             }
 
+            if (taskId) {
+                taskService.updateTask(taskId, { progress: 60, message: 'Analyzing visual thumbnail elements...' });
+            }
+
             // 2. New: Visual Intelligence Analysis
             let visualDescription = '';
             const { visionService } = await import('./visionService');
@@ -118,12 +130,20 @@ class DocumentService {
                 console.warn('[MULTIMODAL_FUSION] ✗ PIPELINE_2_FAULT (VISION). Proceeding with P1 only.');
             }
 
+            if (taskId) {
+                taskService.updateTask(taskId, { progress: 75, message: 'Saving knowledge nodes to Database...' });
+            }
+
             console.log(`[MULTIMODAL_FUSION] ✓ ENRICHMENT_SYNCED. Visual context size: ${visualDescription.length ? visualDescription.length : 0} bytes`);
             console.log(`[DOCUMENT_SERVICE] Saving to MongoDB...`);
 
             const savedDoc = await DocumentModel.create({ url, title, thumbnail, transcript, visualDescription, category });
 
             console.log(`[STORAGE] ✓ Document ${savedDoc._id} saved to MongoDB.`);
+
+            if (taskId) {
+                taskService.updateTask(taskId, { progress: 85, message: 'Generating vector embeddings...' });
+            }
 
             // Generate and store embeddings in vector DB
             console.log(`[MULTIMODAL_FUSION] ⚙️  COMBINING_MODALITIES (INDEX_0 = VISION)...`);
@@ -140,13 +160,20 @@ class DocumentService {
 
             console.log(`[DOCUMENT_SERVICE] ✓ [MULTIMODAL_UPLOAD_COMPLETE]`);
 
+            if (taskId) {
+                taskService.updateTask(taskId, { status: 'completed', progress: 100, message: 'Analysis complete!', videoId: savedDoc._id.toString() });
+            }
+
             return {
                 id: savedDoc._id.toString(),
                 url: savedDoc.url,
                 transcript: savedDoc.transcript
             };
-        } catch (error) {
+        } catch (error: any) {
             console.error('[DOCUMENT_SERVICE] ✗ Upload Error:', error);
+            if (taskId) {
+                taskService.updateTask(taskId, { status: 'failed', progress: 100, message: 'Analysis aborted: ' + error.message, error: error.message });
+            }
             throw error;
         }
     }
