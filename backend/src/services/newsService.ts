@@ -40,8 +40,9 @@ export const newsService = {
                 timeout: 10000
             });
 
-            if (response.data && Array.isArray(response.data.articles)) {
-                return response.data.articles as NewsArticle[];
+            const responseData = response.data as any;
+            if (responseData && Array.isArray(responseData.articles)) {
+                return responseData.articles as NewsArticle[];
             }
             return [];
         } catch (error: any) {
