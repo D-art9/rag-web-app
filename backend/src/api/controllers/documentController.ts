@@ -85,3 +85,26 @@ export const deleteDocument = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error deleting document', error });
     }
 };
+
+export const getDocumentNews = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ message: 'Invalid document ID' });
+        }
+
+        const document = await DocumentModel.findById(id);
+        if (!document) {
+            return res.status(404).json({ message: 'Document not found' });
+        }
+
+        const { newsService } = await import('../../services/newsService');
+        const category = document.category || 'general';
+        const articles = await newsService.fetchNewsByCategory(category);
+
+        res.status(200).json({ category, articles });
+    } catch (error) {
+        res.status(500).json({ message: 'Error retrieving news for document', error });
+    }
+};

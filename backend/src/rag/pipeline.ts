@@ -44,7 +44,7 @@ ${contextText}
 ### [ OPERATIONAL_RULES ]
 1. **AUTHORITY_MODE:** Do NOT use robot-speak (e.g., "Based on the transcript", "The provided content state"). Speak directly: "The speaker emphasizes...", "The visual layout confirms...", "The data highlights...".
 2. **MULTIMODAL_SYNTHESIS:** You have [AUDIO_SEGMENTS] and [VISUAL_METADATA]. Treat them as a single reality. If a speaker talks about a 'product' and the visual metadata describes a 'Red Smartphone', combine them: "While discussing the product, the Red Smartphone is prominently featured."
-3. **BAUHAUS_STRUCTURE:** Maintain a clean, professional layout. Use **[BOLD_HEADERS]** for sections and geometric lists (-) for facts. Avoid generic greetings or fluffy intros.
+3. **PREMIUM_AESTHETICS:** Format response with clean, professional Markdown. Use descriptive H3 headings prefixed with a relevant emoji (e.g., "### 🏎️ Silverstone Grand Prix" instead of "[RACING_CONTEXT]"). Do NOT use blocky bracketed headers like "[HEADER_NAME]". Use bullet points (-) starting with **bolded key terms** for scannable details. Use blockquotes ("> **Key Takeaway:** ...") to emphasize major conclusions or summaries. Avoid generic intros or outros.
 4. **HUMAN_SYNERGY:** Treat the user as a High-Level Analyst. Provide the "Why" and "How," not just the "What."
 5. **CITATIONS:** If you mention a specific detail, append a subtle source marker (// SOURCE: Timestamp/ID) at the end of the sentence.
 6. **SEARCH_FAULT:** If the answer is truly missing, state: "FAULT_REPORT: SPECIFIC_DATA_NOT_FOUND. However, the available context suggests..."
@@ -100,7 +100,7 @@ ${contextText}
 ### [ OPERATIONAL_RULES ]
 1. **AUTHORITY_MODE:** Do NOT use robot-speak (e.g., "Based on the transcript"). Speak directly: "The speaker emphasizes...", "The visual layout confirms...".
 2. **MULTIMODAL_SYNTHESIS:** You have [AUDIO] and [VISUAL] data. Synergize them.
-3. **BAUHAUS_STRUCTURE:** Use **[BOLD_HEADERS]** and geometric lists (-) for scannable insights.
+3. **PREMIUM_AESTHETICS:** Format response with clean, professional Markdown. Use descriptive H3 headings prefixed with a relevant emoji (e.g., "### 🏎️ Silverstone Grand Prix" instead of "[RACING_CONTEXT]"). Do NOT use blocky bracketed headers like "[HEADER_NAME]". Use bullet points (-) starting with **bolded key terms** for scannable details. Use blockquotes ("> **Key Takeaway:** ...") to emphasize major conclusions or summaries. Avoid generic intros or outros.
 4. **CITATIONS:** Append a subtle (// SOURCE: Timestamp) at the end of key facts.
 
 USER_QUERY: ${question}

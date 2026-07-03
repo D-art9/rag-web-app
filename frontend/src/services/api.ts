@@ -98,3 +98,14 @@ export const sendStudyChat = async (history: any[], message: string) => {
         throw error;
     }
 };
+
+export const fetchDocumentNews = async (documentId: string) => {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/documents/${documentId}/news`);
+        return response.data; // Expected { category: string, articles: any[] }
+    } catch (error) {
+        const err: any = error;
+        console.error('Error fetching document news:', err.response?.data || err.message);
+        throw error;
+    }
+};

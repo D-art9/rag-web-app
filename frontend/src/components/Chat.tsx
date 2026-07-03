@@ -49,7 +49,24 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
+    const [newsArticles, setNewsArticles] = useState<any[]>([]);
+    const [category, setCategory] = useState<string>('general');
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const loadNews = async () => {
+            if (!videoId) return;
+            try {
+                const api = await import('../services/api');
+                const data = await api.fetchDocumentNews(videoId);
+                setCategory(data.category || 'general');
+                setNewsArticles(data.articles || []);
+            } catch (err) {
+                console.error('Failed to load category news:', err);
+            }
+        };
+        loadNews();
+    }, [videoId]);
 
     useEffect(() => {
         if (messagesEndRef.current) {
@@ -160,7 +177,50 @@ const Chat: React.FC<ChatProps> = ({ videoId, ytId }) => {
                         </div>
                     </div>
 
-                    <div style={{ marginTop: 'auto' }}>
+                    {newsArticles.length > 0 && (
+                        <div className="glass-card" style={{ marginTop: '24px', padding: '16px', overflowY: 'auto', maxHeight: '300px' }}>
+                            <div className="industrial-label" style={{ marginBottom: '12px', color: 'var(--accent-cyan)' }}>LIVE_FEED: {category.toUpperCase()}</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                {newsArticles.map((article, index) => (
+                                    <a 
+                                        key={index} 
+                                        href={article.url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        style={{ 
+                                            textDecoration: 'none', 
+                                            display: 'flex', 
+                                            gap: '10px', 
+                                            background: 'rgba(255,255,255,0.02)', 
+                                            borderRadius: '6px', 
+                                            padding: '8px', 
+                                            border: '1px solid rgba(255,255,255,0.05)',
+                                            transition: '0.2s',
+                                            alignItems: 'center'
+                                        }}
+                                    >
+                                        {article.image && (
+                                            <img 
+                                                src={article.image} 
+                                                alt="" 
+                                                style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} 
+                                            />
+                                        )}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', overflow: 'hidden' }}>
+                                            <span style={{ fontSize: '11px', fontWeight: 900, color: 'white', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.2' }}>
+                                                {article.title}
+                                            </span>
+                                            <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>
+                                                {article.source?.name}
+                                            </span>
+                                        </div>
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <div style={{ marginTop: 'auto', paddingTop: '20px' }}>
                         <div className="industrial-label" style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', marginBottom: 0 }}>
                             <span style={{ color: 'var(--accent-red)' }}>●</span> ENCRYPTED_SYNC
                         </div>

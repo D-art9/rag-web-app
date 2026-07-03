@@ -1,5 +1,5 @@
 import express from 'express';
-import { uploadDocument, getDocuments, getDocument, deleteDocument } from '../controllers/documentController';
+import { uploadDocument, getDocuments, getDocument, deleteDocument, getDocumentNews } from '../controllers/documentController';
 
 const router = express.Router();
 
@@ -11,6 +11,7 @@ router.get('/', getDocuments);
 
 // FIX: Mount previously dead-code routes
 router.get('/:id', getDocument);
+router.get('/:id/news', getDocumentNews);
 router.delete('/:id', deleteDocument);
 
 export default router;

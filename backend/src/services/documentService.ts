@@ -74,7 +74,41 @@ class DocumentService {
             // FIX: Single call to microservice instead of two parallel calls
             const { transcript, title, thumbnail } = await transcriptService.extractAll(url);
 
-            // 1. New: Visual Intelligence Analysis
+            // 1. Classify Category using Gemini
+            let category = 'general';
+            const { geminiService } = await import('./geminiService');
+            try {
+                console.log(`[DOCUMENT_SERVICE] Classifying video category via Gemini...`);
+                const classificationPrompt = `
+                You are a content classifier. Categorize this video transcript summary into EXACTLY one of the following categories:
+                - general
+                - world
+                - nation
+                - business
+                - technology
+                - entertainment
+                - sports
+                - science
+                - health
+
+                Return ONLY the category name in lowercase with no additional text or formatting.
+
+                Transcript summary:
+                "${transcript.substring(0, 3000)}"
+                `;
+                const geminiCategory = await geminiService.chat([], classificationPrompt);
+                const cleanedCategory = geminiCategory.trim().toLowerCase();
+                
+                const validCategories = ['general', 'world', 'nation', 'business', 'technology', 'entertainment', 'sports', 'science', 'health'];
+                if (validCategories.includes(cleanedCategory)) {
+                    category = cleanedCategory;
+                }
+                console.log(`[DOCUMENT_SERVICE] Video classified as category: ${category}`);
+            } catch (err) {
+                console.warn('[DOCUMENT_SERVICE] ✗ Gemini classification failed. Defaulting to general.');
+            }
+
+            // 2. New: Visual Intelligence Analysis
             let visualDescription = '';
             const { visionService } = await import('./visionService');
             try {
@@ -87,7 +121,7 @@ class DocumentService {
             console.log(`[MULTIMODAL_FUSION] ✓ ENRICHMENT_SYNCED. Visual context size: ${visualDescription.length ? visualDescription.length : 0} bytes`);
             console.log(`[DOCUMENT_SERVICE] Saving to MongoDB...`);
 
-            const savedDoc = await DocumentModel.create({ url, title, thumbnail, transcript, visualDescription });
+            const savedDoc = await DocumentModel.create({ url, title, thumbnail, transcript, visualDescription, category });
 
             console.log(`[STORAGE] ✓ Document ${savedDoc._id} saved to MongoDB.`);
 
