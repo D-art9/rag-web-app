@@ -1,18 +1,28 @@
 import React, { useState } from 'react';
-import { ArrowRight, Circle, Square, Triangle, Activity, Zap, Cpu, X } from 'lucide-react';
+import { ArrowRight, Circle, Square, Triangle, Activity, Zap, Cpu, X, Play, History, GitBranch, Sliders } from 'lucide-react';
+import GlassIcons, { GlassIconItem } from './GlassIcons';
 
 interface HeroLandingProps {
     onOpenAnalyzer: () => void;
+    onNavigate: (view: any) => void;
 }
 
 type Panel = 'features' | 'tech' | 'api' | null;
 
-const HeroLanding: React.FC<HeroLandingProps> = ({ onOpenAnalyzer }) => {
+const HeroLanding: React.FC<HeroLandingProps> = ({ onOpenAnalyzer, onNavigate }) => {
     const [activePanel, setActivePanel] = useState<Panel>(null);
 
     const togglePanel = (panel: Panel) => {
         setActivePanel(prev => prev === panel ? null : panel);
     };
+
+    const glassItems: GlassIconItem[] = [
+        { icon: <Play />, color: 'red', label: 'START', onClick: () => onNavigate('landing') },
+        { icon: <Cpu />, color: 'blue', label: 'WORKSPACE', onClick: () => onNavigate('chat') },
+        { icon: <History />, color: 'orange', label: 'HISTORY', onClick: () => onNavigate('history') },
+        { icon: <GitBranch />, color: 'indigo', label: 'DATAFLOW', onClick: () => onNavigate('dataflow') },
+        { icon: <Sliders />, color: 'green', label: 'DIAGNOSTICS', onClick: () => onNavigate('diagnostics') },
+    ];
 
     return (
         <div className="hero-landing-v4">
@@ -119,6 +129,11 @@ const HeroLanding: React.FC<HeroLandingProps> = ({ onOpenAnalyzer }) => {
                             <div className="pulse-circle"></div>
                             <span>CONNECTED: GEMINI_2.5</span>
                         </div>
+                    </div>
+                    
+                    <div style={{ marginTop: '30px', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div className="hero-tag">[ CORE_WORKSPACE_ROUTER ]</div>
+                        <GlassIcons items={glassItems} />
                     </div>
                 </div>
 

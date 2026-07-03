@@ -97,7 +97,7 @@ const App: React.FC = () => {
 
       {/* 01_APPLICATION_VIEWPORT */}
       <main className="workspace-container" style={{ background: 'var(--bg-core)' }}>
-        {currentView === 'hero' && <HeroLanding onOpenAnalyzer={() => setView('landing')} />}
+        {currentView === 'hero' && <HeroLanding onOpenAnalyzer={() => setView('landing')} onNavigate={setView} />}
         { currentView === 'landing' && <LandingPage onUrlSubmit={handleUrlSubmit} onNavigate={(v: any) => setView(v)} /> }
         { currentView === 'history' && <HistoryPage onSelectVideo={(id, url) => { setDocId(id); setVideoUrl(url); setView('chat'); }} /> }
         { currentView === 'dataflow' && <Dataflow /> }
